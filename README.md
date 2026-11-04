@@ -40,9 +40,11 @@ npm run typecheck
 npm test
 npx expo install --check
 npm run export
+npx playwright install chromium
+npm run test:web
 ```
 
-GitHub Actions에서도 의존성 호환성, 타입 검사, 로그인·비밀번호 표시·재실행 동작 테스트, iOS·Android·웹 번들 생성을 실행합니다. 번들 생성은 설치 가능한 APK/IPA 생성이나 실기기 실행 검증과는 별도입니다.
+GitHub Actions에서도 의존성 호환성, 타입 검사, 로그인·비밀번호 표시·재실행 동작 테스트, iOS·Android·웹 번들 생성, 브라우저 동작과 휴대폰·태블릿 화면 검사를 실행합니다. 번들 생성은 설치 가능한 APK/IPA 생성이나 실기기 실행 검증과는 별도입니다.
 
 ## 주요 파일
 

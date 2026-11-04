@@ -10,3 +10,4 @@ coverage/
 .env.*
 android/
 ios/
+qa-output/
