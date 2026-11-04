@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "main": "index.ts",
-  "engines": { "node": ">=22.13.0" },
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
@@ -22,11 +24,11 @@
     "react-native": "0.86.3",
     "react-native-safe-area-context": "5.7.0",
     "react-native-svg": "15.15.4",
-    "react-native-web": "0.21.0"
+    "react-native-web": "0.21.2"
   },
   "devDependencies": {
     "@react-native/jest-preset": "0.86.3",
-    "@types/react": "19.2.2",
+    "@types/react": "19.2.4",
     "jest": "29.7.0",
     "jest-expo": "57.0.6",
     "react-test-renderer": "19.2.3",
@@ -34,7 +36,11 @@
   },
   "jest": {
     "preset": "jest-expo",
-    "testMatch": ["**/__tests__/**/*.test.jsx"],
-    "setupFilesAfterEnv": ["<rootDir>/jest.setup.js"]
+    "testMatch": [
+      "**/__tests__/**/*.test.jsx"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest.setup.js"
+    ]
   }
 }

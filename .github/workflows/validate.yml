@@ -29,3 +29,11 @@ jobs:
         run: npm run export
         env:
           CI: '1'
+      - name: Save validated web bundle and dependency lock
+        uses: actions/upload-artifact@v4
+        with:
+          name: validated-app
+          path: |
+            dist/
+            package-lock.json
+          retention-days: 7
