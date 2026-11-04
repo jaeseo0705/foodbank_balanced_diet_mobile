@@ -88,6 +88,7 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
               accessibilityLabel="로그인 상태 유지"
               accessibilityHint="앱이 실행 중인 동안에만 적용됩니다. 앱을 완전히 종료하면 초기화됩니다."
               accessibilityState={{ checked: keepLoggedIn }}
+              aria-checked={keepLoggedIn}
               testID="keep-logged-in"
               onPress={() => setKeepLoggedIn((value) => !value)}
               style={({ pressed }) => [styles.rememberRow, pressed && styles.pressed]}
