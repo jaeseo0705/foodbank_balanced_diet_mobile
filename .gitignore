@@ -1,0 +1,12 @@
+node_modules/
+.expo/
+dist/
+web-build/
+coverage/
+*.tsbuildinfo
+*.log
+.DS_Store
+.env
+.env.*
+android/
+ios/

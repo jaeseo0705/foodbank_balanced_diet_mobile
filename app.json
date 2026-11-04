@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "영양성분 입력",
+    "slug": "foodbank-balanced-diet-mobile",
+    "version": "1.0.0",
+    "orientation": "default",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#FFFFFF",
+    "ios": { "supportsTablet": true },
+    "android": { "softwareKeyboardLayoutMode": "resize" },
+    "web": { "name": "영양성분 입력", "bundler": "metro" }
+  }
+}
