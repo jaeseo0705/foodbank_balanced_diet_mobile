@@ -25,9 +25,9 @@ try {
   await page.getByTestId('login-screen').waitFor();
   await page.screenshot({ path: 'qa-output/login-phone.png', fullPage: true });
   await page.getByLabel('비밀번호', { exact: true }).fill('sample-password');
-  assert.equal(await page.getByLabel('비밀번호', { exact: true }).getAttribute('type'), 'password');
+  assert.equal(await page.getByLabel('비밀번호', { exact: true }).evaluate((input) => input.type), 'password');
   await page.getByRole('button', { name: '비밀번호 표시', exact: true }).click();
-  assert.equal(await page.getByLabel('비밀번호', { exact: true }).getAttribute('type'), 'text');
+  assert.equal(await page.getByLabel('비밀번호', { exact: true }).evaluate((input) => input.type), 'text');
   await page.getByRole('button', { name: '비밀번호 숨기기', exact: true }).click();
   assert.equal(await page.getByLabel('비밀번호', { exact: true }).inputValue(), 'sample-password');
   await page.getByRole('button', { name: '아이디 · 비밀번호 찾기', exact: true }).click();

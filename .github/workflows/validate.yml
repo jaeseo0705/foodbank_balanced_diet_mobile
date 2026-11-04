@@ -33,10 +33,11 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Check browser interactions and layouts
         run: npm run test:web
-      - name: Save validated web bundle and dependency lock
+      - name: Save build and screen check output
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: validated-app
+          name: app-check-output
           path: |
             dist/
             package-lock.json
