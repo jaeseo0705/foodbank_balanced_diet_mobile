@@ -73,7 +73,7 @@ try {
         await chooser.setFiles({
           name: 'nutrition-label.png',
           mimeType: 'image/png',
-          buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aS1sAAAAASUVORK5CYII=', 'base64'),
+          buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAEAAAABgCAIAAAAip+O/AAAAgElEQVR4nO3PQQ0AIBDAMMC/50MEj4ZkVbDtmVk/OzrgVQNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA9oFu4MDvZRMYK4AAAAASUVORK5CYII=', 'base64'),
         });
         await page.getByTestId('picked-nutrition-image').waitFor();
         await page.getByTestId('remove-nutrition-photo').click();
