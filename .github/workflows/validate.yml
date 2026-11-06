@@ -29,8 +29,14 @@ jobs:
         run: npm run export
         env:
           CI: '1'
-      - name: Install browser for screen checks
-        run: npx playwright install --with-deps chromium
+      - name: Select browser for screen checks
+        run: |
+          browser_path="$(command -v google-chrome || command -v chromium || true)"
+          if [ -n "$browser_path" ]; then
+            echo "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=$browser_path" >> "$GITHUB_ENV"
+          else
+            npx playwright install --with-deps chromium
+          fi
       - name: Check browser interactions and layouts
         run: npm run test:web
         env:

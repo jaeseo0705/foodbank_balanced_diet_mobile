@@ -17,7 +17,7 @@ try {
     await setTimeout(100);
   }
   await mkdir('qa-output', { recursive: true });
-  browser = await chromium.launch({ headless: true });
+  browser = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined });
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
