@@ -91,10 +91,18 @@ function CalculationDrawing() {
   );
 }
 
+// Center the visible drawings, not their uneven original SVG canvas margins.
+const iconTranslation: Record<TaskId, string> = {
+  'nutrition-registration': 'translate(0 2)',
+  inventory: 'translate(-1 1.5)',
+  distribution: 'translate(2 -1.5)',
+  'nutrition-calculation': 'translate(-2 -1.5)',
+};
+
 export function TaskIcon({ task, size }: { task: TaskId; size: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 128 128" aria-hidden>
-      <G fill="none" stroke={colors.primary} strokeWidth={3.3} strokeLinecap="round" strokeLinejoin="round">
+      <G transform={iconTranslation[task]} fill="none" stroke={colors.primary} strokeWidth={3.3} strokeLinecap="round" strokeLinejoin="round">
         {task === 'nutrition-registration' && <RegistrationDrawing />}
         {task === 'inventory' && <InventoryDrawing />}
         {task === 'distribution' && <DistributionDrawing />}

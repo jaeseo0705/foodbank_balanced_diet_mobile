@@ -25,12 +25,24 @@ try {
     const ids = ['nutrition-registration', 'inventory', 'distribution', 'nutrition-calculation'];
     const boxes = await Promise.all(ids.map((id) => page.getByTestId('task-' + id).boundingBox()));
     assert.ok(boxes.every(Boolean), 'All four task cards must be visible');
-    assert.ok(Math.abs(boxes[0].y - boxes[1].y) < 2, 'Top cards stay in one row');
-    assert.ok(Math.abs(boxes[2].y - boxes[3].y) < 2, 'Bottom cards stay in one row');
-    assert.ok(boxes[2].y > boxes[0].y, 'Bottom row follows top row');
-    const gridCenter = (boxes[0].y + boxes[2].y + boxes[2].height) / 2;
-    assert.ok(Math.abs(gridCenter - page.viewportSize().height / 2) < page.viewportSize().height * 0.1, 'Task grid stays near vertical center');
-    assert.ok(boxes.every((box) => box.x >= 0 && box.x + box.width <= page.viewportSize().width + 1), 'No horizontal overflow');
+    for (let i = 0; i < boxes.length; i++) {
+      const box = boxes[i];
+      assert.ok(box.x >= page.viewportSize().width * 0.06, 'Cards leave side margins');
+      assert.ok(box.x + box.width <= page.viewportSize().width * 0.94, 'Cards leave right margin');
+      assert.ok(box.width > box.height * 1.8, 'Cards are horizontal');
+      if (i > 0) {
+        assert.ok(box.y > boxes[i - 1].y + boxes[i - 1].height, 'Four separate rows');
+        assert.ok(Math.abs(box.x - boxes[0].x) < 1, 'Rows share their left edge');
+      }
+      const icon = await page.getByTestId('icon-' + ids[i]).boundingBox();
+      const label = await page.getByTestId('label-' + ids[i]).boundingBox();
+      assert.ok(icon && label);
+      const center = box.y + box.height / 2;
+      assert.ok(Math.abs(icon.y + icon.height / 2 - center) < 2, 'Icon is vertically centered');
+      assert.ok(Math.abs(label.y + label.height / 2 - center) < 2, 'Label is vertically centered');
+      assert.ok(label.x > icon.x + icon.width, 'Icon and label have a clear gap');
+      assert.ok(label.x + label.width < box.x + box.width, 'Label stays inside card');
+    }
   }
   await page.goto(baseUrl);
   await page.getByTestId('login-screen').waitFor();
@@ -75,7 +87,7 @@ try {
   await page.getByRole('button', { name: '뒤로', exact: true }).click();
   await page.getByRole('button', { name: '로그아웃', exact: true }).click();
   await page.getByTestId('login-screen').waitFor();
-  for (const [name, width, height] of [['small-phone', 320, 568], ['tablet', 768, 1024]]) {
+  for (const [name, width, height] of [['small-phone', 320, 568], ['wide-layout', 768, 1024], ['landscape', 844, 390]]) {
     await page.setViewportSize({ width, height });
     await page.reload();
     await page.getByTestId('login-screen').waitFor();
@@ -84,6 +96,10 @@ try {
     await page.getByRole('button', { name: '로그인', exact: true }).click();
     await page.getByTestId('task-selection-screen').waitFor();
     await checkTasks();
+    await page.getByTestId('task-nutrition-calculation').scrollIntoViewIfNeeded();
+    await page.getByTestId('task-nutrition-calculation').click();
+    await page.getByRole('heading', { name: '영양 계산', exact: true }).waitFor();
+    await page.getByRole('button', { name: '뒤로', exact: true }).click();
     await page.screenshot({ path: `qa-output/task-selection-${name}.png`, fullPage: true });
   }
   assert.deepEqual(errors, []);

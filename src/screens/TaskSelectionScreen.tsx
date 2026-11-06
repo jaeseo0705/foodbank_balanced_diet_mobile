@@ -22,13 +22,15 @@ export function TaskSelectionScreen({ onSelectTask, onOpenProfile }: Props) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const contentWidth = Math.min(width - insets.left - insets.right, 500);
-  const sideInset = contentWidth * 0.1;
+  const sideInset = contentWidth * 0.09;
+  const cardWidth = contentWidth - sideInset * 2;
+  const cardHeight = Math.max(92, Math.min(140, contentWidth * 0.29));
+  const iconSize = cardHeight * 0.78;
+  const labelSize = Math.max(16, Math.min(20, contentWidth * 0.046));
   const gap = Math.max(12, contentWidth * 0.032);
-  const cardSize = (contentWidth - sideInset * 2 - gap) / 2;
-  const iconSize = cardSize * 0.62;
-  const labelSize = Math.max(13, Math.min(18, cardSize * 0.11));
   const availableHeight = height - insets.top - insets.bottom;
   const headerTop = Math.max(24, Math.min(80, availableHeight * 0.08));
+  const listTop = Math.max(32, Math.min(76, availableHeight * 0.09));
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -37,7 +39,7 @@ export function TaskSelectionScreen({ onSelectTask, onOpenProfile }: Props) {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.content, { width: contentWidth, minHeight: availableHeight, paddingTop: headerTop, paddingBottom: headerTop }]}>
+        <View style={[styles.content, { width: contentWidth, paddingTop: headerTop }]}>
           <View style={[styles.header, { paddingHorizontal: contentWidth * 0.06 }]}>
             <Text accessibilityRole="header" style={styles.title}>업무 선택</Text>
             <Pressable
@@ -51,36 +53,47 @@ export function TaskSelectionScreen({ onSelectTask, onOpenProfile }: Props) {
             </Pressable>
           </View>
 
-          <View style={styles.gridArea}>
-            <View
-              testID="task-grid"
-              style={[styles.grid, { paddingHorizontal: sideInset, gap }]}
-            >
-              {tasks.map((task) => (
-                <Pressable
-                  key={task.id}
-                  testID={`task-${task.id}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={task.label}
-                  onPress={() => onSelectTask(task.id)}
-                  style={({ pressed }) => [
-                    styles.card,
-                    { width: cardSize, minHeight: cardSize * 1.02, borderRadius: cardSize * 0.1 },
-                    pressed && styles.cardPressed,
+          <View
+            testID="task-list"
+            style={{ marginTop: listTop, paddingHorizontal: sideInset, gap }}
+          >
+            {tasks.map((task) => (
+              <Pressable
+                key={task.id}
+                testID={`task-${task.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={task.label}
+                onPress={() => onSelectTask(task.id)}
+                style={({ pressed }) => [
+                  styles.card,
+                  { width: cardWidth },
+                  pressed && styles.cardPressed,
+                ]}
+              >
+                <LinearGradient
+                  colors={[colors.cardTop, colors.cardBottom]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0.8, y: 1 }}
+                  style={[
+                    styles.cardSurface,
+                    { minHeight: cardHeight, paddingHorizontal: cardWidth * 0.075, gap: cardWidth * 0.065 },
                   ]}
                 >
-                  <LinearGradient
-                    colors={[colors.cardTop, colors.cardBottom]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0.8, y: 1 }}
-                    style={[styles.cardSurface, { borderRadius: cardSize * 0.1, minHeight: cardSize * 1.02, paddingVertical: cardSize * 0.12, gap: cardSize * 0.035 }]}
+                  <View
+                    testID={`icon-${task.id}`}
+                    style={[styles.iconSlot, { width: iconSize, height: iconSize }]}
                   >
                     <TaskIcon task={task.id} size={iconSize} />
-                    <Text style={[styles.taskLabel, { fontSize: labelSize }]}>{task.label}</Text>
-                  </LinearGradient>
-                </Pressable>
-              ))}
-            </View>
+                  </View>
+                  <Text
+                    testID={`label-${task.id}`}
+                    style={[styles.taskLabel, { fontSize: labelSize, lineHeight: labelSize * 1.4 }]}
+                  >
+                    {task.label}
+                  </Text>
+                </LinearGradient>
+              </Pressable>
+            ))}
           </View>
         </View>
       </ScrollView>
@@ -90,14 +103,14 @@ export function TaskSelectionScreen({ onSelectTask, onOpenProfile }: Props) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  scroll: { flexGrow: 1, alignItems: 'center', paddingBottom: 0 },
+  scroll: { flexGrow: 1, alignItems: 'center', paddingBottom: 40 },
   content: { alignSelf: 'center' },
   header: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontSize: 28, fontWeight: '700', color: colors.text, flexShrink: 1, marginRight: 12 },
   profileButton: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
-  gridArea: { flexGrow: 1, justifyContent: 'center', paddingVertical: 28 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', alignContent: 'flex-start' },
+  iconSlot: { flexShrink: 0, alignItems: 'center', justifyContent: 'center' },
   card: {
+    borderRadius: 16,
     backgroundColor: colors.cardTop,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 5 },
@@ -106,11 +119,14 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   cardSurface: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: colors.cardBorder,
-    paddingHorizontal: 6,
+    flexDirection: 'row', alignItems: 'center',
+    borderRadius: 16, borderWidth: 1, borderColor: colors.cardBorder,
+    paddingVertical: 12,
   },
-  taskLabel: { color: colors.text, fontWeight: '600', textAlign: 'center', flexShrink: 1 },
+  taskLabel: {
+    flex: 1, color: colors.text, fontWeight: '600', textAlign: 'left',
+    includeFontPadding: false,
+  },
   cardPressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
   pressed: { opacity: 0.7 },
 });
