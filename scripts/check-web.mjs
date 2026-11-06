@@ -51,6 +51,24 @@ try {
       assert.ok(label.x + label.width < box.x + box.width, 'Label stays inside card');
     }
   }
+  async function checkRegistration(name, preview = false) {
+    await page.getByTestId('task-nutrition-registration').click();
+    await page.getByTestId('nutrition-registration-screen').waitFor();
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    const screenshot = await page.screenshot({ path: 'qa-output/nutrition-registration-' + name + '.png', fullPage: true });
+    if (preview && process.env.QA_PREVIEW_LOG === '1') console.log('QA_REGISTRATION_START' + screenshot.toString('base64') + 'QA_REGISTRATION_END');
+    for (const method of ['camera', 'photo', 'manual']) {
+      const button = page.getByTestId('registration-' + method);
+      await button.scrollIntoViewIfNeeded();
+      const box = await button.boundingBox();
+      assert.ok(box && box.x >= 0 && box.x + box.width <= page.viewportSize().width, 'Registration actions remain inside the screen');
+      await button.click();
+      await page.getByTestId('registration-notice').waitFor();
+      await page.getByTestId('registration-notice-close').click();
+    }
+    await page.getByRole('button', { name: '뒤로', exact: true }).click();
+    await page.getByTestId('task-selection-screen').waitFor();
+  }
   await page.goto(baseUrl);
   await page.getByTestId('login-screen').waitFor();
   const loginPreview = await page.screenshot({ path: 'qa-output/login-phone.png', fullPage: true });
@@ -82,6 +100,7 @@ try {
   await checkTasks();
   const preview = await page.screenshot({ path: 'qa-output/task-selection-phone.png', fullPage: true });
   if (process.env.QA_PREVIEW_LOG === '1') console.log('QA_IMAGE_START' + preview.toString('base64') + 'QA_IMAGE_END');
+  await checkRegistration('phone', true);
   for (const label of ['영양성분 등록', '재고 현황', '배분 추천', '영양 계산']) {
     await page.getByRole('button', { name: label, exact: true }).click();
     await page.getByRole('heading', { name: label, exact: true }).waitFor();
@@ -103,6 +122,7 @@ try {
     await page.getByRole('button', { name: '로그인', exact: true }).click();
     await page.getByTestId('task-selection-screen').waitFor();
     await checkTasks();
+    await checkRegistration(name);
     await page.getByTestId('task-nutrition-calculation').scrollIntoViewIfNeeded();
     await page.getByTestId('task-nutrition-calculation').click();
     await page.getByRole('heading', { name: '영양 계산', exact: true }).waitFor();

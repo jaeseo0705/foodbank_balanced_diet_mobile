@@ -92,3 +92,14 @@ test('profile settings returns to profile and logout clears the session', async 
   await act(async () => { byId('login-button').props.onPress(); });
   expect(byId('task-selection-screen')).toBeDefined();
 });
+
+test.each(['camera', 'photo', 'manual'])('registration %s selection shows a dismissible preparation notice', async (method) => {
+  await act(async () => { byId('login-button').props.onPress(); });
+  await act(async () => { byId('task-nutrition-registration').props.onPress(); });
+  expect(byId('nutrition-registration-screen')).toBeDefined();
+  await act(async () => { byId('registration-' + method).props.onPress(); });
+  expect(byId('registration-notice')).toBeDefined();
+  await act(async () => { byId('registration-notice-close').props.onPress(); });
+  await act(async () => { byId('back-button').props.onPress(); });
+  expect(byId('task-selection-screen')).toBeDefined();
+});

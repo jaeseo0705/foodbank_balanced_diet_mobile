@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackIcon, ProfileAvatar, type TaskId } from '../components/TaskIcons';
 import { colors } from '../theme';
 import { TaskSelectionScreen, tasks } from './TaskSelectionScreen';
+import { NutritionRegistrationScreen } from './NutritionRegistrationScreen';
 
 type Screen = 'home' | TaskId | 'profile' | 'settings' | 'about';
 
@@ -22,6 +23,10 @@ export function WorkspaceScreen({ onLogout }: { onLogout: () => void }) {
 
   if (screen === 'home') {
     return <TaskSelectionScreen onSelectTask={setScreen} onOpenProfile={() => setScreen('profile')} />;
+  }
+
+  if (screen === 'nutrition-registration') {
+    return <NutritionRegistrationScreen onBack={() => setScreen('home')} />;
   }
 
   const title = screen === 'profile' ? '프로필'
