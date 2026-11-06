@@ -62,9 +62,23 @@ try {
       await button.scrollIntoViewIfNeeded();
       const box = await button.boundingBox();
       assert.ok(box && box.x >= 0 && box.x + box.width <= page.viewportSize().width, 'Registration actions remain inside the screen');
-      await button.click();
-      await page.getByTestId('registration-notice').waitFor();
-      await page.getByTestId('registration-notice-close').click();
+      if (method === 'manual') {
+        await button.click();
+        await page.getByTestId('registration-notice').waitFor();
+        await page.getByTestId('registration-notice-close').click();
+      } else {
+        const chooserPromise = page.waitForEvent('filechooser');
+        await button.click();
+        const chooser = await chooserPromise;
+        await chooser.setFiles({
+          name: 'nutrition-label.png',
+          mimeType: 'image/png',
+          buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aS1sAAAAASUVORK5CYII=', 'base64'),
+        });
+        await page.getByTestId('picked-nutrition-image').waitFor();
+        await page.getByTestId('remove-nutrition-photo').click();
+        assert.equal(await page.getByTestId('picked-nutrition-image').count(), 0);
+      }
     }
     await page.getByRole('button', { name: '뒤로', exact: true }).click();
     await page.getByTestId('task-selection-screen').waitFor();

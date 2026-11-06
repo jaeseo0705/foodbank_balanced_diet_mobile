@@ -6,8 +6,25 @@
     "orientation": "default",
     "userInterfaceStyle": "light",
     "backgroundColor": "#FFFFFF",
-    "ios": { "supportsTablet": true },
-    "android": { "softwareKeyboardLayoutMode": "resize" },
-    "web": { "name": "영양성분 입력", "bundler": "metro" }
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "softwareKeyboardLayoutMode": "resize"
+    },
+    "web": {
+      "name": "영양성분 입력",
+      "bundler": "metro"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "영양성분표 사진을 선택하기 위해 사진에 접근합니다.",
+          "cameraPermission": "영양성분표를 촬영하기 위해 카메라를 사용합니다.",
+          "microphonePermission": false
+        }
+      ]
+    ]
   }
 }

@@ -1,6 +1,14 @@
 import { act, create } from 'react-test-renderer';
-import { AppState, Keyboard, TextInput } from 'react-native';
+import { AppState, Keyboard, Linking, Platform, TextInput } from 'react-native';
 import App from '../App';
+import * as ImagePicker from 'expo-image-picker';
+
+jest.mock('expo-image-picker', () => ({
+  requestCameraPermissionsAsync: jest.fn(),
+  launchCameraAsync: jest.fn(),
+  launchImageLibraryAsync: jest.fn(),
+  getPendingResultAsync: jest.fn(),
+}));
 
 let renderer;
 
@@ -9,6 +17,10 @@ function byId(id) {
 }
 
 beforeEach(async () => {
+  ImagePicker.requestCameraPermissionsAsync.mockReset().mockResolvedValue({ granted: true, canAskAgain: true });
+  ImagePicker.launchCameraAsync.mockReset().mockResolvedValue({ canceled: true, assets: null });
+  ImagePicker.launchImageLibraryAsync.mockReset().mockResolvedValue({ canceled: true, assets: null });
+  ImagePicker.getPendingResultAsync.mockReset().mockResolvedValue(null);
   await act(async () => { renderer = create(<App />); });
 });
 
@@ -93,13 +105,104 @@ test('profile settings returns to profile and logout clears the session', async 
   expect(byId('task-selection-screen')).toBeDefined();
 });
 
-test.each(['camera', 'photo', 'manual'])('registration %s selection shows a dismissible preparation notice', async (method) => {
+test.each(['manual'])('registration %s selection shows a dismissible preparation notice', async (method) => {
   await act(async () => { byId('login-button').props.onPress(); });
   await act(async () => { byId('task-nutrition-registration').props.onPress(); });
   expect(byId('nutrition-registration-screen')).toBeDefined();
   await act(async () => { byId('registration-' + method).props.onPress(); });
   expect(byId('registration-notice')).toBeDefined();
   await act(async () => { byId('registration-notice-close').props.onPress(); });
+  await act(async () => { byId('back-button').props.onPress(); });
+  expect(byId('task-selection-screen')).toBeDefined();
+});
+
+const sampleAsset = { uri: 'file:///nutrition.jpg', type: 'image', width: 1600, height: 1200 };
+
+async function openRegistration() {
+  await act(async () => { byId('login-button').props.onPress(); });
+  await act(async () => { byId('task-nutrition-registration').props.onPress(); });
+}
+
+test.each(['camera', 'photo'])('%s returns an uncropped image preview that can be removed', async (method) => {
+  const picker = method === 'camera' ? ImagePicker.launchCameraAsync : ImagePicker.launchImageLibraryAsync;
+  picker.mockResolvedValue({ canceled: false, assets: [sampleAsset] });
+  await openRegistration();
+  await act(async () => { byId('registration-' + method).props.onPress(); });
+  expect(picker).toHaveBeenCalledWith(expect.objectContaining({ mediaTypes: ['images'], allowsEditing: false, quality: 1 }));
+  expect(ImagePicker.requestCameraPermissionsAsync).toHaveBeenCalledTimes(method === 'camera' ? 1 : 0);
+  expect(byId('picked-nutrition-image').props.source.uri).toBe(sampleAsset.uri);
+  expect(byId('picked-nutrition-image').props.resizeMode).toBe('contain');
+  await act(async () => { byId('remove-nutrition-photo').props.onPress(); });
+  expect(byId('picked-nutrition-image')).toBeUndefined();
+});
+
+test('canceling a replacement leaves the previous photo and returns to an enabled state', async () => {
+  ImagePicker.launchImageLibraryAsync
+    .mockResolvedValueOnce({ canceled: false, assets: [sampleAsset] })
+    .mockResolvedValueOnce({ canceled: true, assets: null });
+  await openRegistration();
+  await act(async () => { byId('registration-photo').props.onPress(); });
+  await act(async () => { byId('registration-photo').props.onPress(); });
+  expect(byId('picked-nutrition-image').props.source.uri).toBe(sampleAsset.uri);
+  expect(byId('registration-photo').props.disabled).toBe(false);
+});
+
+test.each([true, false])('camera denial handles canAskAgain=%s without launching camera', async (canAskAgain) => {
+  ImagePicker.requestCameraPermissionsAsync.mockResolvedValue({ granted: false, canAskAgain });
+  await openRegistration();
+  await act(async () => { byId('registration-camera').props.onPress(); });
+  expect(ImagePicker.launchCameraAsync).not.toHaveBeenCalled();
+  expect(byId('registration-notice')).toBeDefined();
+  expect(Boolean(byId('camera-open-settings'))).toBe(!canAskAgain);
+  if (!canAskAgain) {
+    const open = jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined);
+    await act(async () => { byId('camera-open-settings').props.onPress(); });
+    expect(open).toHaveBeenCalledTimes(1);
+  }
+  expect(byId('registration-camera').props.disabled).toBe(false);
+});
+
+test('picker failure allows the user to close the notice and try again', async () => {
+  ImagePicker.launchImageLibraryAsync.mockRejectedValueOnce(new Error('picker unavailable'))
+    .mockResolvedValueOnce({ canceled: false, assets: [sampleAsset] });
+  await openRegistration();
+  await act(async () => { byId('registration-photo').props.onPress(); });
+  expect(byId('registration-notice')).toBeDefined();
+  expect(byId('registration-photo').props.disabled).toBe(false);
+  await act(async () => { byId('registration-notice-close').props.onPress(); });
+  await act(async () => { byId('registration-photo').props.onPress(); });
+  expect(byId('picked-nutrition-image').props.source.uri).toBe(sampleAsset.uri);
+});
+
+test('rapid repeated presses open only one picker', async () => {
+  let finish;
+  ImagePicker.launchImageLibraryAsync.mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+  await openRegistration();
+  await act(async () => {
+    byId('registration-photo').props.onPress();
+    byId('registration-photo').props.onPress();
+  });
+  expect(ImagePicker.launchImageLibraryAsync).toHaveBeenCalledTimes(1);
+  expect(byId('registration-photo').props.disabled).toBe(true);
+  await act(async () => { finish({ canceled: true, assets: null }); });
+  expect(byId('registration-photo').props.disabled).toBe(false);
+});
+
+test('Android recovers the pending image result after activity recreation', async () => {
+  jest.replaceProperty(Platform, 'OS', 'android');
+  ImagePicker.getPendingResultAsync.mockResolvedValue({ canceled: false, assets: [sampleAsset] });
+  await openRegistration();
+  expect(ImagePicker.getPendingResultAsync).toHaveBeenCalledTimes(1);
+  expect(byId('picked-nutrition-image').props.source.uri).toBe(sampleAsset.uri);
+});
+
+test('back from a preview clears the image before leaving registration', async () => {
+  ImagePicker.launchImageLibraryAsync.mockResolvedValue({ canceled: false, assets: [sampleAsset] });
+  await openRegistration();
+  await act(async () => { byId('registration-photo').props.onPress(); });
+  await act(async () => { byId('back-button').props.onPress(); });
+  expect(byId('picked-nutrition-image')).toBeUndefined();
+  expect(byId('nutrition-registration-screen')).toBeDefined();
   await act(async () => { byId('back-button').props.onPress(); });
   expect(byId('task-selection-screen')).toBeDefined();
 });
