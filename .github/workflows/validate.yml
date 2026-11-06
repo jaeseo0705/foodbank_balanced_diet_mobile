@@ -37,6 +37,15 @@ jobs:
           else
             npx playwright install --with-deps chromium
           fi
+      - name: Install Korean fonts for screen captures
+        run: |
+          mkdir -p "$HOME/.local/share/fonts"
+          for weight in Regular Bold; do
+            curl --fail --location --retry 2 --max-time 90 \
+              "https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/OTF/Korean/NotoSansCJKkr-${weight}.otf" \
+              --output "$HOME/.local/share/fonts/NotoSansCJKkr-${weight}.otf"
+          done
+          fc-cache -f
       - name: Check browser interactions and layouts
         run: npm run test:web
         env:
