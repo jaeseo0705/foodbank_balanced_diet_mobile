@@ -28,8 +28,7 @@ export function TaskSelectionScreen({ onSelectTask, onOpenProfile }: Props) {
   const iconSize = cardSize * 0.62;
   const labelSize = Math.max(13, Math.min(18, cardSize * 0.11));
   const availableHeight = height - insets.top - insets.bottom;
-  const headerTop = Math.max(24, Math.min(44, availableHeight * 0.055));
-  const gridTop = Math.max(38, Math.min(82, availableHeight * 0.11));
+  const headerTop = Math.max(24, Math.min(80, availableHeight * 0.08));
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -38,7 +37,7 @@ export function TaskSelectionScreen({ onSelectTask, onOpenProfile }: Props) {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.content, { width: contentWidth, paddingTop: headerTop }]}>
+        <View style={[styles.content, { width: contentWidth, minHeight: availableHeight, paddingTop: headerTop, paddingBottom: headerTop }]}>
           <View style={[styles.header, { paddingHorizontal: contentWidth * 0.06 }]}>
             <Text accessibilityRole="header" style={styles.title}>업무 선택</Text>
             <Pressable
@@ -52,34 +51,36 @@ export function TaskSelectionScreen({ onSelectTask, onOpenProfile }: Props) {
             </Pressable>
           </View>
 
-          <View
-            testID="task-grid"
-            style={[styles.grid, { marginTop: gridTop, paddingHorizontal: sideInset, gap }]}
-          >
-            {tasks.map((task) => (
-              <Pressable
-                key={task.id}
-                testID={`task-${task.id}`}
-                accessibilityRole="button"
-                accessibilityLabel={task.label}
-                onPress={() => onSelectTask(task.id)}
-                style={({ pressed }) => [
-                  styles.card,
-                  { width: cardSize, minHeight: cardSize * 1.02, borderRadius: cardSize * 0.1 },
-                  pressed && styles.cardPressed,
-                ]}
-              >
-                <LinearGradient
-                  colors={[colors.cardTop, colors.cardBottom]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 0.8, y: 1 }}
-                  style={[styles.cardSurface, { borderRadius: cardSize * 0.1, minHeight: cardSize * 1.02, paddingVertical: cardSize * 0.12, gap: cardSize * 0.035 }]}
+          <View style={styles.gridArea}>
+            <View
+              testID="task-grid"
+              style={[styles.grid, { paddingHorizontal: sideInset, gap }]}
+            >
+              {tasks.map((task) => (
+                <Pressable
+                  key={task.id}
+                  testID={`task-${task.id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={task.label}
+                  onPress={() => onSelectTask(task.id)}
+                  style={({ pressed }) => [
+                    styles.card,
+                    { width: cardSize, minHeight: cardSize * 1.02, borderRadius: cardSize * 0.1 },
+                    pressed && styles.cardPressed,
+                  ]}
                 >
-                  <TaskIcon task={task.id} size={iconSize} />
-                  <Text style={[styles.taskLabel, { fontSize: labelSize }]}>{task.label}</Text>
-                </LinearGradient>
-              </Pressable>
-            ))}
+                  <LinearGradient
+                    colors={[colors.cardTop, colors.cardBottom]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0.8, y: 1 }}
+                    style={[styles.cardSurface, { borderRadius: cardSize * 0.1, minHeight: cardSize * 1.02, paddingVertical: cardSize * 0.12, gap: cardSize * 0.035 }]}
+                  >
+                    <TaskIcon task={task.id} size={iconSize} />
+                    <Text style={[styles.taskLabel, { fontSize: labelSize }]}>{task.label}</Text>
+                  </LinearGradient>
+                </Pressable>
+              ))}
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -89,11 +90,12 @@ export function TaskSelectionScreen({ onSelectTask, onOpenProfile }: Props) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  scroll: { flexGrow: 1, alignItems: 'center', paddingBottom: 40 },
+  scroll: { flexGrow: 1, alignItems: 'center', paddingBottom: 0 },
   content: { alignSelf: 'center' },
   header: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontSize: 28, fontWeight: '700', color: colors.text, flexShrink: 1, marginRight: 12 },
   profileButton: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  gridArea: { flexGrow: 1, justifyContent: 'center', paddingVertical: 28 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', alignContent: 'flex-start' },
   card: {
     backgroundColor: colors.cardTop,

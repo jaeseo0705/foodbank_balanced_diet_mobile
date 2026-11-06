@@ -28,11 +28,14 @@ try {
     assert.ok(Math.abs(boxes[0].y - boxes[1].y) < 2, 'Top cards stay in one row');
     assert.ok(Math.abs(boxes[2].y - boxes[3].y) < 2, 'Bottom cards stay in one row');
     assert.ok(boxes[2].y > boxes[0].y, 'Bottom row follows top row');
+    const gridCenter = (boxes[0].y + boxes[2].y + boxes[2].height) / 2;
+    assert.ok(Math.abs(gridCenter - page.viewportSize().height / 2) < page.viewportSize().height * 0.1, 'Task grid stays near vertical center');
     assert.ok(boxes.every((box) => box.x >= 0 && box.x + box.width <= page.viewportSize().width + 1), 'No horizontal overflow');
   }
   await page.goto(baseUrl);
   await page.getByTestId('login-screen').waitFor();
-  await page.screenshot({ path: 'qa-output/login-phone.png', fullPage: true });
+  const loginPreview = await page.screenshot({ path: 'qa-output/login-phone.png', fullPage: true });
+  if (process.env.QA_PREVIEW_LOG === '1') console.log('QA_LOGIN_START' + loginPreview.toString('base64') + 'QA_LOGIN_END');
   await page.getByLabel('비밀번호', { exact: true }).fill('sample-password');
   assert.equal(await page.getByLabel('비밀번호', { exact: true }).evaluate((input) => input.type), 'password');
   await page.getByRole('button', { name: '비밀번호 표시', exact: true }).click();

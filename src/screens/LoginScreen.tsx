@@ -142,7 +142,7 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   screen: { flex: 1, backgroundColor: '#FFFFFF' },
-  scroll: { flexGrow: 1, alignItems: 'center' },
+  scroll: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 24 },
   content: { width: '100%', maxWidth: 460, paddingHorizontal: 24 },
   hero: { alignItems: 'center', justifyContent: 'center' },
   fields: { gap: 14, marginHorizontal: 5 },
