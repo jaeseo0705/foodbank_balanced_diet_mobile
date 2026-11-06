@@ -91,12 +91,13 @@ function CalculationDrawing() {
   );
 }
 
-// Center the visible drawings, not their uneven original SVG canvas margins.
+// Balance each drawing by its visible stroke distribution, not just its canvas bounds.
+// The calculator body carries more visual weight than the leaf, so it needs a rightward offset.
 const iconTranslation: Record<TaskId, string> = {
-  'nutrition-registration': 'translate(0 2)',
-  inventory: 'translate(-1 1.5)',
-  distribution: 'translate(2 -1.5)',
-  'nutrition-calculation': 'translate(-2 -1.5)',
+  'nutrition-registration': 'translate(1 4)',
+  inventory: 'translate(-2 -3)',
+  distribution: 'translate(-2 0.5)',
+  'nutrition-calculation': 'translate(6 -0.5)',
 };
 
 export function TaskIcon({ task, size }: { task: TaskId; size: number }) {

@@ -41,6 +41,13 @@ try {
       assert.ok(Math.abs(icon.y + icon.height / 2 - center) < 2, 'Icon is vertically centered');
       assert.ok(Math.abs(label.y + label.height / 2 - center) < 2, 'Label is vertically centered');
       assert.ok(label.x > icon.x + icon.width, 'Icon and label have a clear gap');
+      const text = page.getByTestId('label-' + ids[i]);
+      const typography = await text.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { align: style.textAlign, lineHeight: parseFloat(style.lineHeight) };
+      });
+      assert.equal(typography.align, 'left', 'Labels keep the approved horizontal alignment');
+      assert.ok(label.height <= typography.lineHeight + 1, 'Task names fit on one line');
       assert.ok(label.x + label.width < box.x + box.width, 'Label stays inside card');
     }
   }

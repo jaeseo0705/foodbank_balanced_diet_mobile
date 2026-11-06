@@ -26,7 +26,7 @@ export function TaskSelectionScreen({ onSelectTask, onOpenProfile }: Props) {
   const cardWidth = contentWidth - sideInset * 2;
   const cardHeight = Math.max(92, Math.min(140, contentWidth * 0.29));
   const iconSize = cardHeight * 0.78;
-  const labelSize = Math.max(16, Math.min(20, contentWidth * 0.046));
+  const labelSize = Math.max(17, Math.min(23, contentWidth * 0.053));
   const gap = Math.max(12, contentWidth * 0.032);
   const availableHeight = height - insets.top - insets.bottom;
   const headerTop = Math.max(24, Math.min(80, availableHeight * 0.08));
@@ -76,7 +76,7 @@ export function TaskSelectionScreen({ onSelectTask, onOpenProfile }: Props) {
                   end={{ x: 0.8, y: 1 }}
                   style={[
                     styles.cardSurface,
-                    { minHeight: cardHeight, paddingHorizontal: cardWidth * 0.075, gap: cardWidth * 0.065 },
+                    { minHeight: cardHeight, paddingHorizontal: cardWidth * 0.075, gap: cardWidth * 0.085 },
                   ]}
                 >
                   <View
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   taskLabel: {
-    flex: 1, color: colors.text, fontWeight: '600', textAlign: 'left',
+    flex: 1, color: colors.text, fontWeight: '700', textAlign: 'left',
     includeFontPadding: false,
   },
   cardPressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
