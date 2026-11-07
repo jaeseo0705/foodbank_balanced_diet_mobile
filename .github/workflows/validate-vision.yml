@@ -20,6 +20,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Select the newest installed stable Xcode
+        run: python3 scripts/select-ci-xcode.py
       - name: Compile and exercise the real Apple Vision engine
         run: |
           mkdir -p qa-output
