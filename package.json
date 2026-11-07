@@ -26,7 +26,8 @@
     "react-native-safe-area-context": "5.7.0",
     "react-native-svg": "15.15.4",
     "react-native-web": "0.21.2",
-    "expo-image-picker": "57.0.21"
+    "expo-image-picker": "57.0.21",
+    "expo-build-properties": "57.0.23"
   },
   "devDependencies": {
     "@react-native/jest-preset": "0.86.3",

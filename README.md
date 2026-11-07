@@ -56,7 +56,7 @@ GitHub Actions에서 같은 검사를 자동 실행하며 로그인·업무 선�
 
 ```bash
 npm install
-npx expo prebuild --platform ios
+npx expo prebuild --clean --platform ios
 npx pod-install
 npx expo run:ios --device
 ```
@@ -71,3 +71,20 @@ npx expo run:ios --device
 - Apple용 자동 연결에 `FoodbankVisionOCRModule`이 포함되는지 검사합니다.
 - macOS CI에서 같은 Swift 인식 엔진을 컴파일하고 생성한 한국어/숫자 표본 이미지를 실제 Vision으로 읽습니다. 이어서 Expo 로컬 모듈까지 포함한 iOS 시뮬레이터 앱을 빌드합니다.
 - 이는 실제 식품 포장 사진의 정확도 측정이나 실기기 촬영 검사를 대신하지 않습니다. 다양한 사진으로 별도 확인이 필요합니다.
+
+## Xcode 27 / iOS 27에서 앱이 바로 종료되는 경우
+
+`UIScene life cycle is required`는 카메라·OCR 권한 오류가 아니라, iOS 27 SDK가 요구하는 화면 생명주기가 생성되지 않았다는 뜻입니다. 현재 설정은 Expo SDK 57을 유지하면서 공식 `expo-build-properties`의 `ios.enableSceneSupport: true`를 적용합니다.
+
+최신 코드를 받은 뒤 실행 중인 서버를 Ctrl+C로 종료하고 다음을 **한 줄씩** 실행하세요.
+
+```bash
+npm install
+npx expo prebuild --clean --platform ios
+npx pod-install
+npx expo run:ios --device
+```
+
+`--clean`은 자동 생성된 **ios 폴더를 지우고 다시 만드는 명령**입니다. 화면 코드(`src`)와 OCR 원본(`modules`)은 그대로 유지됩니다. ios 폴더를 직접 편집한 경우에는 먼저 해당 변경을 백업해야 합니다. 기기 목록에서 **iPhone 18 Pro**를 선택합니다.
+
+자동 검사는 생성된 Info.plist의 scene manifest와 AppDelegate 설정을 확인하고, 빌드 후 임시 시뮬레이터에 앱을 설치·실행해 시작 직후 종료되는 문제도 검사합니다. 검증에 사용한 Xcode/iOS 버전은 GitHub Actions 로그에서 확인할 수 있습니다.

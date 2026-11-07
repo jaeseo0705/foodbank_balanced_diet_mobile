@@ -33,6 +33,8 @@ jobs:
           node scripts/check-ocr-autolinking.mjs
       - name: Generate the iOS project
         run: npx expo prebuild --platform ios --no-install
+      - name: Verify generated iOS scene lifecycle
+        run: node scripts/check-ios-scenes.mjs
       - name: Install iOS pods
         run: npx --yes pod-install
       - name: Build the native iOS app including the Expo OCR module
@@ -44,6 +46,8 @@ jobs:
           xcodebuild -workspace "$workspace" -scheme "$scheme" -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/foodbank-ios-build CODE_SIGNING_ALLOWED=NO build > qa-output/ios-build.log 2>&1 || { tail -n 100 qa-output/ios-build.log; exit 1; }
           grep -q 'FoodbankVisionOCRModule.swift' qa-output/ios-build.log
           tail -n 12 qa-output/ios-build.log
+      - name: Launch the native app in a simulator
+        run: python3 scripts/check-ios-launch.py
       - name: Collect Vision process diagnostics
         if: failure()
         run: |

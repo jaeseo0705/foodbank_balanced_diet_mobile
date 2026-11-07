@@ -25,6 +25,14 @@
           "cameraPermission": "영양성분표를 촬영하기 위해 카메라를 사용합니다.",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "enableSceneSupport": true
+          }
+        }
       ]
     ]
   }
