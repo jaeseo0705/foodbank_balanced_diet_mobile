@@ -24,7 +24,7 @@ jobs:
         run: |
           mkdir -p qa-output
           xcodebuild -version
-          swiftc modules/foodbank-vision-ocr/ios/VisionTextRecognizer.swift scripts/vision-smoke/main.swift -o /tmp/foodbank-vision-check -framework Vision -framework AppKit -framework ImageIO -framework CoreGraphics
+          swiftc modules/foodbank-vision-ocr/ios/VisionTextRecognizer.swift scripts/vision-smoke/main.swift -o /tmp/foodbank-vision-check -framework Vision -framework CoreText -framework ImageIO -framework CoreGraphics
           /tmp/foodbank-vision-check > qa-output/vision-smoke.log 2>&1 || { cat qa-output/vision-smoke.log; exit 1; }
           cat qa-output/vision-smoke.log
       - name: Install dependencies and verify module registration

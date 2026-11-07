@@ -1,5 +1,7 @@
 import Foundation
-import AppKit
+import CoreGraphics
+import CoreText
+import ImageIO
 
 func check(_ condition: @autoclosure () -> Bool, _ message: String) {
   if !condition() { fputs("FAIL: " + message + "\n", stderr); exit(1) }
@@ -10,26 +12,27 @@ let output = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
 let width = 1200
 let height = 700
-let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height,
-  bitsPerSample: 8, samplesPerPixel: 3, hasAlpha: false, isPlanar: false,
-  colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
-NSGraphicsContext.saveGraphicsState()
-NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
-NSColor.white.setFill()
-NSRect(x: 0, y: 0, width: width, height: height).fill()
-let paragraph = NSMutableParagraphStyle()
-paragraph.lineSpacing = 18
-let label = "영양정보\n나트륨 350mg\n탄수화물 20g\n단백질 5g"
-(label as NSString).draw(in: NSRect(x: 70, y: 80, width: 1060, height: 540), withAttributes: [
-  .font: NSFont.systemFont(ofSize: 64),
-  .foregroundColor: NSColor.black,
-  .paragraphStyle: paragraph
-])
-NSGraphicsContext.restoreGraphicsState()
+let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
+  bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+context.setFillColor(CGColor(gray: 1, alpha: 1))
+context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+let font = CTFontCreateWithName("AppleSDGothicNeo-Regular" as CFString, 64, nil)
+let attributes: [NSAttributedString.Key: Any] = [
+  NSAttributedString.Key(kCTFontAttributeName as String): font,
+  NSAttributedString.Key(kCTForegroundColorAttributeName as String): CGColor(gray: 0, alpha: 1)
+]
+for (index, value) in ["영양정보", "나트륨 350mg", "탄수화물 20g", "단백질 5g"].enumerated() {
+  context.textPosition = CGPoint(x: 70, y: 560 - index * 130)
+  CTLineDraw(CTLineCreateWithAttributedString(NSAttributedString(string: value, attributes: attributes)), context)
+}
 let url = output.appendingPathComponent("vision-test-label.png")
-try bitmap.representation(using: .png, properties: [:])!.write(to: url)
-// A CI Mac is virtualized: use CPU recognition off the main thread, while keeping
-// the main dispatch queue available to Apple's framework services.
+let destination = CGImageDestinationCreateWithURL(url as CFURL, "public.png" as CFString, 1, nil)!
+CGImageDestinationAddImage(destination, context.makeImage()!, nil)
+check(CGImageDestinationFinalize(destination), "The test image must be written")
+print("Generated the Korean OCR test image.")
+fflush(stdout)
+
 DispatchQueue.global(qos: .userInitiated).async {
   do {
     let result = try VisionTextRecognizer.recognize(uri: url.absoluteString, cpuOnly: true)
@@ -48,10 +51,9 @@ DispatchQueue.global(qos: .userInitiated).async {
     try data.write(to: output.appendingPathComponent("vision-result.json"))
     do {
       _ = try VisionTextRecognizer.recognize(uri: output.appendingPathComponent("missing.png").absoluteString, cpuOnly: true)
-      fatalError("A missing image must fail")
+      check(false, "A missing image must fail")
     } catch { print("Missing image rejection passed.") }
     print("Apple Vision Korean OCR smoke check passed.\n" + text)
-    
     exit(0)
   } catch {
     fputs("Vision smoke check failed: \(error)\n", stderr)
