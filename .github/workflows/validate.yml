@@ -21,6 +21,8 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Check Expo dependency compatibility
         run: npx expo install --check
+      - name: Verify local OCR module autolinking
+        run: node scripts/check-ocr-autolinking.mjs
       - name: Typecheck
         run: npm run typecheck
       - name: Test login and restart behavior

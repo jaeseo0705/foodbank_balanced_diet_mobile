@@ -76,6 +76,10 @@ try {
           buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAEAAAABgCAIAAAAip+O/AAAAgElEQVR4nO3PQQ0AIBDAMMC/50MEj4ZkVbDtmVk/OzrgVQNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA9oFu4MDvZRMYK4AAAAASUVORK5CYII=', 'base64'),
         });
         await page.getByTestId('picked-nutrition-image').waitFor();
+        await page.getByTestId('read-nutrition-text').click();
+        await page.getByTestId('registration-notice').waitFor();
+        assert.match(await page.getByTestId('registration-notice').innerText(), /iPhone/);
+        await page.getByTestId('registration-notice-close').click();
         await page.getByTestId('remove-nutrition-photo').click();
         assert.equal(await page.getByTestId('picked-nutrition-image').count(), 0);
       }

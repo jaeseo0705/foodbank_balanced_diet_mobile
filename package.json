@@ -45,5 +45,10 @@
     "setupFilesAfterEnv": [
       "<rootDir>/jest.setup.js"
     ]
+  },
+  "expo": {
+    "autolinking": {
+      "nativeModulesDir": "./modules"
+    }
   }
 }

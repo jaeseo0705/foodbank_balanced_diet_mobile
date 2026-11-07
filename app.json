@@ -7,7 +7,8 @@
     "userInterfaceStyle": "light",
     "backgroundColor": "#FFFFFF",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jaeseo0705.foodbankbalanceddietmobile"
     },
     "android": {
       "softwareKeyboardLayoutMode": "resize"

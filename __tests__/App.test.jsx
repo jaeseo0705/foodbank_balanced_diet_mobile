@@ -2,6 +2,9 @@ import { act, create } from 'react-test-renderer';
 import { AppState, Keyboard, Linking, Platform, TextInput } from 'react-native';
 import App from '../App';
 import * as ImagePicker from 'expo-image-picker';
+import { recognizeNutritionText } from '../src/lib/ocr';
+import { OcrError } from '../src/lib/ocr.types';
+jest.mock('../src/lib/ocr', () => ({ recognizeNutritionText: jest.fn() }));
 
 jest.mock('expo-image-picker', () => ({
   requestCameraPermissionsAsync: jest.fn(),
@@ -17,6 +20,7 @@ function byId(id) {
 }
 
 beforeEach(async () => {
+  recognizeNutritionText.mockReset().mockResolvedValue({ text: '나트륨 350mg\n탄수화물 20g', lines: [], languages: ['ko-KR', 'en-US'] });
   ImagePicker.requestCameraPermissionsAsync.mockReset().mockResolvedValue({ granted: true, canAskAgain: true });
   ImagePicker.launchCameraAsync.mockReset().mockResolvedValue({ canceled: true, assets: null });
   ImagePicker.launchImageLibraryAsync.mockReset().mockResolvedValue({ canceled: true, assets: null });
@@ -205,4 +209,76 @@ test('back from a preview clears the image before leaving registration', async (
   expect(byId('nutrition-registration-screen')).toBeDefined();
   await act(async () => { byId('back-button').props.onPress(); });
   expect(byId('task-selection-screen')).toBeDefined();
+});
+
+async function selectOcrPhoto() {
+  ImagePicker.launchImageLibraryAsync.mockResolvedValue({ canceled: false, assets: [sampleAsset] });
+  await openRegistration();
+  await act(async () => { byId('registration-photo').props.onPress(); });
+}
+
+test('OCR reads the selected photo and shows its raw text without inventing fields', async () => {
+  await selectOcrPhoto();
+  await act(async () => { byId('read-nutrition-text').props.onPress(); });
+  expect(recognizeNutritionText).toHaveBeenCalledWith(sampleAsset.uri);
+  expect(byId('ocr-text').props.children).toBe('나트륨 350mg\n탄수화물 20g');
+  expect(byId('read-nutrition-text').props.disabled).toBe(false);
+});
+
+test('empty OCR results show a retry message instead of zero nutrition values', async () => {
+  recognizeNutritionText.mockResolvedValue({ text: '', lines: [], languages: ['ko-KR'] });
+  await selectOcrPhoto();
+  await act(async () => { byId('read-nutrition-text').props.onPress(); });
+  expect(byId('ocr-empty')).toBeDefined();
+  expect(byId('ocr-text')).toBeUndefined();
+});
+
+test('OCR failure and missing native module can be dismissed and retried', async () => {
+  recognizeNutritionText.mockRejectedValueOnce(new OcrError('rebuild-required', '앱을 다시 빌드·설치해 주세요.'))
+    .mockResolvedValueOnce({ text: '단백질 5g', lines: [], languages: ['ko-KR'] });
+  await selectOcrPhoto();
+  await act(async () => { byId('read-nutrition-text').props.onPress(); });
+  expect(byId('registration-notice')).toBeDefined();
+  expect(byId('read-nutrition-text').props.disabled).toBe(false);
+  await act(async () => { byId('registration-notice-close').props.onPress(); });
+  await act(async () => { byId('read-nutrition-text').props.onPress(); });
+  expect(byId('ocr-text').props.children).toBe('단백질 5g');
+});
+
+test('repeated OCR presses launch one request', async () => {
+  let finish;
+  recognizeNutritionText.mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+  await selectOcrPhoto();
+  await act(async () => {
+    byId('read-nutrition-text').props.onPress();
+    byId('read-nutrition-text').props.onPress();
+  });
+  expect(recognizeNutritionText).toHaveBeenCalledTimes(1);
+  expect(byId('read-nutrition-text').props.disabled).toBe(true);
+  await act(async () => { finish({ text: '나트륨 350mg', lines: [], languages: ['ko-KR'] }); });
+  expect(byId('ocr-text')).toBeDefined();
+});
+
+test.each(['replace', 'remove'])('old OCR replies are ignored after photo %s', async (action) => {
+  let finish;
+  recognizeNutritionText.mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+  await selectOcrPhoto();
+  await act(async () => { byId('read-nutrition-text').props.onPress(); });
+  if (action === 'replace') {
+    ImagePicker.launchImageLibraryAsync.mockResolvedValue({ canceled: false, assets: [{ ...sampleAsset, uri: 'file:///new-photo.jpg' }] });
+    await act(async () => { byId('registration-photo').props.onPress(); });
+  } else {
+    await act(async () => { byId('remove-nutrition-photo').props.onPress(); });
+  }
+  await act(async () => { finish({ text: 'OLD RESULT', lines: [], languages: ['ko-KR'] }); });
+  expect(byId('ocr-result')).toBeUndefined();
+});
+
+test('a new photo clears an already displayed OCR result', async () => {
+  await selectOcrPhoto();
+  await act(async () => { byId('read-nutrition-text').props.onPress(); });
+  ImagePicker.launchImageLibraryAsync.mockResolvedValue({ canceled: false, assets: [{ ...sampleAsset, uri: 'file:///replacement.jpg' }] });
+  await act(async () => { byId('registration-photo').props.onPress(); });
+  expect(byId('ocr-result')).toBeUndefined();
+  expect(byId('picked-nutrition-image').props.source.uri).toBe('file:///replacement.jpg');
 });

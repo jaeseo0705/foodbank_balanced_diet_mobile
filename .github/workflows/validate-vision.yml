@@ -1,0 +1,51 @@
+name: Validate Apple Vision OCR
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  vision-native:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    env:
+      CI: '1'
+      RCT_NO_LAUNCH_PACKAGER: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Compile and exercise the real Apple Vision engine
+        run: |
+          mkdir -p qa-output
+          xcodebuild -version
+          swiftc modules/foodbank-vision-ocr/ios/VisionTextRecognizer.swift scripts/vision-smoke/main.swift -o /tmp/foodbank-vision-check -framework Vision -framework AppKit -framework ImageIO -framework CoreGraphics
+          /tmp/foodbank-vision-check
+      - name: Install dependencies and verify module registration
+        run: |
+          npm install --no-audit --no-fund
+          node scripts/check-ocr-autolinking.mjs
+      - name: Generate the iOS project
+        run: npx expo prebuild --platform ios --no-install
+      - name: Install iOS pods
+        run: npx --yes pod-install
+      - name: Build the native iOS app including the Expo OCR module
+        run: |
+          set -o pipefail
+          workspace="$(find ios -maxdepth 1 -name '*.xcworkspace' -print -quit)"
+          xcodebuild -list -json -workspace "$workspace" > qa-output/xcode-project.json
+          scheme="$(python3 -c 'import json; print(json.load(open("qa-output/xcode-project.json"))["workspace"]["schemes"][0])')"
+          xcodebuild -workspace "$workspace" -scheme "$scheme" -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/foodbank-ios-build CODE_SIGNING_ALLOWED=NO build > qa-output/ios-build.log 2>&1 || { tail -n 100 qa-output/ios-build.log; exit 1; }
+          tail -n 12 qa-output/ios-build.log
+      - name: Save native OCR verification output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apple-vision-check-output
+          path: qa-output/
+          retention-days: 7
