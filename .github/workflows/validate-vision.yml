@@ -40,8 +40,9 @@ jobs:
           set -o pipefail
           workspace="$(find ios -maxdepth 1 -name '*.xcworkspace' -print -quit)"
           xcodebuild -list -json -workspace "$workspace" > qa-output/xcode-project.json
-          scheme="$(python3 -c 'import json; print(json.load(open("qa-output/xcode-project.json"))["workspace"]["schemes"][0])')"
+          scheme="$(python3 -c 'import json,pathlib; app=next(pathlib.Path("ios").glob("*.xcodeproj")).stem; schemes=json.load(open("qa-output/xcode-project.json"))["workspace"]["schemes"]; assert app in schemes, (app,schemes); print(app)')"
           xcodebuild -workspace "$workspace" -scheme "$scheme" -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/foodbank-ios-build CODE_SIGNING_ALLOWED=NO build > qa-output/ios-build.log 2>&1 || { tail -n 100 qa-output/ios-build.log; exit 1; }
+          grep -q 'FoodbankVisionOCRModule.swift' qa-output/ios-build.log
           tail -n 12 qa-output/ios-build.log
       - name: Collect Vision process diagnostics
         if: failure()
