@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-const result = JSON.parse(execFileSync('npx', ['expo-modules-autolinking', 'resolve', '--platform', 'apple'], { encoding: 'utf8' }));
+const result = JSON.parse(execFileSync('npx', ['expo-modules-autolinking', 'resolve', '--platform', 'apple', '--json'], { encoding: 'utf8' }));
 const module = result.modules.find((item) => item.packageName === 'foodbank-vision-ocr');
 assert.ok(module, 'The local Vision module must be included in Apple autolinking');
 assert.ok(module.modules.includes('FoodbankVisionOCRModule'), 'The Swift module must be registered');

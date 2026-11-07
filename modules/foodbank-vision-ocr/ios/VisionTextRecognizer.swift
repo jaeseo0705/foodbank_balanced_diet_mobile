@@ -7,7 +7,7 @@ enum VisionTextRecognizer {
   // Limit working image memory without changing the original selected photograph.
   static let maximumImageDimension = 3200
 
-  static func recognize(uri: String) throws -> [String: Any] {
+  static func recognize(uri: String, cpuOnly: Bool = false) throws -> [String: Any] {
     guard let url = URL(string: uri), url.isFileURL,
           FileManager.default.fileExists(atPath: url.path) else {
       throw failure(1, "A readable local photo is required.")
@@ -24,6 +24,7 @@ enum VisionTextRecognizer {
 
     let request = VNRecognizeTextRequest()
     request.recognitionLevel = .accurate
+    if cpuOnly { request.usesCPUOnly = true }
     // Keep the recognized numbers/units as raw OCR instead of linguistic corrections.
     request.usesLanguageCorrection = false
     let supported = try request.supportedRecognitionLanguages()
