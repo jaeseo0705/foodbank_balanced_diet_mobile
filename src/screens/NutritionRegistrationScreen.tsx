@@ -52,7 +52,7 @@ export function NutritionRegistrationScreen({ onBack }: { onBack: () => void }) 
     } catch (error) {
       if (!mounted.current || token !== ocrToken.current) return;
       setNotice({
-        title: '글자 읽기',
+        title: '영양정보 읽기',
         message: error instanceof OcrError
           ? error.message
           : '글자를 읽지 못했습니다. 다른 사진으로 다시 시도해 주세요.',
@@ -181,12 +181,12 @@ export function NutritionRegistrationScreen({ onBack }: { onBack: () => void }) 
               <Pressable
                 testID="remove-nutrition-photo"
                 accessibilityRole="button"
-                accessibilityLabel="선택한 사진 삭제"
+                accessibilityLabel="사진 선택 해제"
                 disabled={busy !== null}
                 onPress={() => updatePhoto(null)}
                 style={styles.removePhoto}
               >
-                <Text style={styles.removePhotoText}>사진 삭제</Text>
+                <Text style={styles.removePhotoText}>선택 해제</Text>
               </Pressable>
             </View>
           ) : (
@@ -200,14 +200,14 @@ export function NutritionRegistrationScreen({ onBack }: { onBack: () => void }) 
               <Pressable
                 testID="read-nutrition-text"
                 accessibilityRole="button"
-                accessibilityLabel={ocrBusy ? '글자 읽는 중' : '글자 읽기'}
+                accessibilityLabel={ocrBusy ? '영양정보 읽는 중' : '영양정보 읽기'}
                 accessibilityState={{ disabled: ocrBusy || busy !== null, busy: ocrBusy }}
                 disabled={ocrBusy || busy !== null}
                 onPress={() => { void readPhoto(); }}
                 style={({ pressed }) => [styles.readButton, pressed && styles.pressed]}
               >
                 {ocrBusy && <ActivityIndicator color={colors.background} />}
-                <Text style={styles.readButtonText}>{ocrBusy ? '글자 읽는 중…' : '글자 읽기'}</Text>
+                <Text style={styles.readButtonText}>{ocrBusy ? '영양정보 읽는 중…' : '영양정보 읽기'}</Text>
               </Pressable>
               {ocrResult !== null && (
                 <View testID="ocr-result" style={styles.resultCard}>
