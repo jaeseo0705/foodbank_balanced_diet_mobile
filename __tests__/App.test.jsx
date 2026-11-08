@@ -145,6 +145,13 @@ test('manual entry opens without a photo and starts every nutrient empty', async
   expect(byId('nutrition-register-notice')).toBeDefined();
   expect(byId('nutrition-registration-message').props.children).toContain('필수 영양성분');
   await act(async () => { byId('nutrition-register-close').props.onPress(); });
+  await act(async () => {
+    for (let i = 1; i <= 9; i++) byId('nutrition-value-A00' + i).props.onChangeText('0');
+  });
+  await act(async () => { byId('register-nutrition').props.onPress(); });
+  expect(byId('nutrition-registration-message').props.children).toContain('입력값은 저장되지 않습니다');
+  await act(async () => { byId('nutrition-register-close').props.onPress(); });
+
   await act(async () => { byId('back-button').props.onPress(); });
   expect(byId('nutrition-registration-screen')).toBeDefined();
   await act(async () => { byId('registration-manual').props.onPress(); });

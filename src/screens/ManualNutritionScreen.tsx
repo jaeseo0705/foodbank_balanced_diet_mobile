@@ -23,8 +23,8 @@ export function ManualNutritionScreen({ onBack, reference = false, food }: { onB
             <Text style={styles.body}>조회한 식품의 종류·조리 상태·함량 기준량을 확인해 입력해 주세요. 해당 제품의 실제 함량과 다를 수 있습니다.</Text>
           </View>}
           <View testID="fms-food-summary" style={styles.source}>
-            <Text style={styles.label}>{food?.name ?? '선택된 FMS 식품이 없습니다'}</Text>
-            <Text style={styles.body}>{food ? `FMS 식품 번호: ${food.id}` : 'FMS에 사전 등록된 식품을 불러와 영양정보를 입력합니다. 현재 불러오기 기능은 연결되어 있지 않습니다.'}</Text>
+            <Text style={styles.label}>{food?.name ?? '영양정보를 입력할 식품'}</Text>
+            <Text style={styles.body}>{food ? `FMS 식품 번호: ${food.id}` : '추후 FMS에서 불러온 식품 정보가 여기에 표시됩니다.'}</Text>
           </View>
           <NutritionReview food={food} result={result} entryMode={reference ? 'reference' : 'manual'} />
         </View>

@@ -78,7 +78,6 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food 
     const invalid = values.filter(item => { const draft = valueDrafts[item.code ?? item.name] ?? ''; return draft.trim() !== '' && !isNutritionNumber(draft); });
     setNoticeText(missing.length ? `필수 영양성분의 숫자를 확인해 주세요: ${missing.join(', ')}. 표시가 0이면 0을 입력해 주세요.`
       : invalid.length ? `숫자를 확인해 주세요: ${invalid.map(item => item.name).join(', ')}.`
-      : !food ? 'FMS에 등록된 식품을 먼저 불러와야 합니다. 현재 FMS 식품 불러오기는 연결되어 있지 않습니다.'
       : '현재는 시험 단계로, 입력값은 저장되지 않습니다.');
     setRegistrationNotice(true);
   }
@@ -113,7 +112,7 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food 
   return (
     <View testID="nutrition-review" style={styles.section}>
       <View style={styles.card}>
-        {entryMode === 'photo' && <View testID="photo-fms-food-summary"><Text style={styles.body}>{food?.name ?? '선택된 FMS 식품이 없습니다'}</Text></View>}
+        {entryMode === 'photo' && <View testID="photo-fms-food-summary"><Text style={styles.body}>{food?.name ?? '영양정보를 입력할 식품'}</Text></View>}
         <Text accessibilityRole="header" style={styles.title}>{entryMode === 'photo' ? '영양정보 확인' : '영양정보 입력'}</Text>
         {entryMode === 'photo' ? <View style={styles.summary}>
           <View style={{ flex: 1, gap: 6 }}>
