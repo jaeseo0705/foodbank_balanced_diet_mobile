@@ -62,8 +62,8 @@ function ValueRow({ item, id, onRemove, onMoveUp, onMoveDown }: {
   );
 }
 
-export function NutritionReview({ result, lines = [] }: { result: NutritionLabelResult; lines?: OcrLine[] }) {
-  const [basisText, setBasisText] = useState(describeNutritionBasis(result.basis));
+export function NutritionReview({ result, lines = [], entryMode = 'photo' }: { result: NutritionLabelResult; lines?: OcrLine[]; entryMode?: 'photo' | 'manual' | 'reference' }) {
+  const [basisText, setBasisText] = useState(entryMode === 'photo' ? describeNutritionBasis(result.basis) : '');
   const [packageQuantity, setPackageQuantity] = useState(result.package?.quantity ?? '');
   const [packageUnit, setPackageUnit] = useState(result.package?.unit ?? 'g');
   const [editingBasis, setEditingBasis] = useState(false);
@@ -104,8 +104,8 @@ export function NutritionReview({ result, lines = [] }: { result: NutritionLabel
   return (
     <View testID="nutrition-review" style={styles.section}>
       <View style={styles.card}>
-        <Text accessibilityRole="header" style={styles.title}>영양정보 확인</Text>
-        <View style={styles.summary}>
+        <Text accessibilityRole="header" style={styles.title}>{entryMode === 'photo' ? '영양정보 확인' : '영양정보 입력'}</Text>
+        {entryMode === 'photo' ? <View style={styles.summary}>
           <View style={{ flex: 1, gap: 6 }}>
             {packageQuantity !== '' && <Text style={styles.body}>총 내용량 {packageQuantity} {packageUnit}</Text>}
             <Text testID="nutrition-basis-summary" style={styles.body}>영양정보 기준: {basisText}</Text>
@@ -113,9 +113,19 @@ export function NutritionReview({ result, lines = [] }: { result: NutritionLabel
           <Pressable testID="nutrition-edit-basis" accessibilityRole="button" accessibilityLabel="영양정보 기준 수정" onPress={editBasis} style={styles.edit}>
             <Text style={styles.editText}>수정</Text>
           </Pressable>
-        </View>
+        </View> : <View style={styles.manualFields}>
+          <Text style={styles.body}>총 내용량</Text>
+          <View style={styles.valueLine}>
+            <TextInput testID="manual-package-quantity" accessibilityLabel="총 내용량" value={packageQuantity}
+              onChangeText={text => { if (numeric(text)) setPackageQuantity(text); }} keyboardType="decimal-pad" placeholder="미입력" style={styles.input} />
+            <TextInput testID="manual-package-unit" accessibilityLabel="총 내용량 단위" value={packageUnit} onChangeText={setPackageUnit} style={styles.input} />
+          </View>
+          <Text style={styles.body}>영양정보 기준</Text>
+          <TextInput testID="manual-basis-text" accessibilityLabel="영양정보 기준" value={basisText} onChangeText={setBasisText}
+            placeholder="예: 총 내용량당, 100 g당, 1봉(40 g)당" style={styles.basisInput} />
+        </View>}
         {multipleBases && <Text style={styles.hint}>사진에 기준량이 여러 개 있습니다. 사용할 열 하나와 각 함량을 확인해 주세요.</Text>}
-        {!multipleBases && (result.basis.needsReview || result.basis.needsUnitWeight) && <Text style={styles.hint}>사진에 적힌 기준을 확인해 주세요.</Text>}
+        {entryMode === 'photo' && !multipleBases && (result.basis.needsReview || result.basis.needsUnitWeight) && <Text style={styles.hint}>사진에 적힌 기준을 확인해 주세요.</Text>}
         {values.map((item, i) => <ValueRow key={item.code ?? i} item={item} id={`nutrition-value-${item.code}`}
           onRemove={manualValues.some(value => value.code === item.code) ? () => removeNutrient(item.code) : undefined}
           onMoveUp={i > 0 ? () => moveNutrient(item.code, -1) : undefined}
@@ -131,7 +141,7 @@ export function NutritionReview({ result, lines = [] }: { result: NutritionLabel
           onPress={() => setRegistrationNotice(true)} style={({ pressed }) => [styles.register, pressed && { opacity: 0.8 }]}>
           <Text style={styles.registerText}>등록</Text>
         </Pressable>
-        <Text style={styles.registrationHint}>사진과 영양정보가 일치하는지 확인한 후 등록해 주세요.</Text>
+        <Text style={styles.registrationHint}>{entryMode === 'photo' ? '사진과 영양정보가 일치하는지 확인한 후 등록해 주세요.' : '입력한 식품명·기준량·영양정보를 확인한 후 등록해 주세요.'}</Text>
       </View>
       {pickerOpen && <NutrientPicker selectedCodes={selectedCodes} onSelect={addNutrient} onClose={() => setPickerOpen(false)} />}
       <Modal visible={editingBasis} transparent animationType="fade" onRequestClose={() => setEditingBasis(false)}>
@@ -170,6 +180,7 @@ export function NutritionReview({ result, lines = [] }: { result: NutritionLabel
 
 const styles = StyleSheet.create({
   section: { gap: 20 },
+  manualFields: { gap: 8 },
   card: { borderRadius: 16, borderWidth: 1, borderColor: colors.cardBorder, backgroundColor: colors.cardTop, padding: 18, gap: 12 },
   title: { color: colors.text, fontSize: 21, fontWeight: '700' },
   subtitle: { color: colors.text, fontSize: 18, fontWeight: '700', marginTop: 8 },

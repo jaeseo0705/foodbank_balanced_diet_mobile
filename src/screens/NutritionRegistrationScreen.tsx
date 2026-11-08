@@ -10,10 +10,13 @@ import { colors } from '../theme';
 import { selectNutritionPhoto, type PhotoMethod } from '../lib/nutritionPhoto';
 import { recognizeNutritionText } from '../lib/ocr';
 import { OcrError, type OcrResult } from '../lib/ocr.types';
+import { ManualNutritionScreen } from './ManualNutritionScreen';
+import { FoodSearchScreen } from './FoodSearchScreen';
 
 const methods: ReadonlyArray<{ id: RegistrationMethod; label: string }> = [
   { id: 'camera', label: '영양성분표 촬영' },
   { id: 'photo', label: '사진 불러오기' },
+  { id: 'search', label: '식품 검색' },
   { id: 'manual', label: '직접 입력' },
 ];
 type Notice = { title: string; message: string; settings?: boolean };
@@ -22,6 +25,7 @@ type Notice = { title: string; message: string; settings?: boolean };
 export function NutritionRegistrationScreen({ onBack }: { onBack: () => void }) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const [route, setRoute] = useState<'methods' | 'manual' | 'search' | 'reference'>('methods');
   const [notice, setNotice] = useState<Notice | null>(null);
   const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [busy, setBusy] = useState<PhotoMethod | null>(null);
@@ -84,13 +88,14 @@ export function NutritionRegistrationScreen({ onBack }: { onBack: () => void }) 
   }, []);
 
   useEffect(() => {
-    if (!photo) return;
+    if (!photo && route === 'methods') return;
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      updatePhoto(null);
+      if (route !== 'methods') setRoute(route === 'reference' ? 'search' : 'methods');
+      else updatePhoto(null);
       return true;
     });
     return () => subscription.remove();
-  }, [photo]);
+  }, [photo, route]);
 
   async function choosePhoto(method: PhotoMethod) {
     if (picking.current) return;
@@ -129,7 +134,11 @@ export function NutritionRegistrationScreen({ onBack }: { onBack: () => void }) 
 
   function chooseMethod(method: RegistrationMethod) {
     if (method === 'manual') {
-      setNotice({ title: '직접 입력', message: '직접 입력 기능을 준비 중입니다.' });
+      interacted.current = true;
+      setRoute('manual');
+    } else if (method === 'search') {
+      interacted.current = true;
+      setRoute('search');
     } else {
       void choosePhoto(method);
     }
@@ -147,7 +156,10 @@ export function NutritionRegistrationScreen({ onBack }: { onBack: () => void }) 
   const availableHeight = height - insets.top - insets.bottom;
   const contentWidth = Math.min(width - insets.left - insets.right, 460);
   const artworkSize = Math.min(250, contentWidth * 0.68);
-  const heroHeight = Math.max(210, Math.min(350, availableHeight * 0.46));
+  const heroHeight = Math.max(210, Math.min(300, availableHeight * 0.38));
+
+  if (route === 'manual' || route === 'reference') return <ManualNutritionScreen reference={route === 'reference'} onBack={() => setRoute(route === 'reference' ? 'search' : 'methods')} />;
+  if (route === 'search') return <FoodSearchScreen onBack={() => setRoute('methods')} onManual={() => setRoute('reference')} />;
 
   return (
     <SafeAreaView style={styles.screen} testID="section-screen">

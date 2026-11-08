@@ -57,15 +57,35 @@ try {
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     const screenshot = await page.screenshot({ path: 'qa-output/nutrition-registration-' + name + '.png', fullPage: true });
     if (preview && process.env.QA_PREVIEW_LOG === '1') console.log('QA_REGISTRATION_START' + screenshot.toString('base64') + 'QA_REGISTRATION_END');
-    for (const method of ['camera', 'photo', 'manual']) {
+    for (const method of ['camera', 'photo', 'search', 'manual']) {
       const button = page.getByTestId('registration-' + method);
       await button.scrollIntoViewIfNeeded();
       const box = await button.boundingBox();
       assert.ok(box && box.x >= 0 && box.x + box.width <= page.viewportSize().width, 'Registration actions remain inside the screen');
       if (method === 'manual') {
         await button.click();
-        await page.getByTestId('registration-notice').waitFor();
-        await page.getByTestId('registration-notice-close').click();
+        await page.getByTestId('manual-nutrition-screen').waitFor();
+        await page.getByTestId('manual-food-name').fill('직접 입력 시험');
+        await page.getByTestId('manual-basis-text').fill('100 g당');
+        await page.getByTestId('nutrition-value-A001').fill('100');
+        assert.equal(await page.getByTestId('nutrition-value-A001').inputValue(), '100');
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+        await page.screenshot({ path: 'qa-output/manual-nutrition-' + name + '.png', fullPage: true });
+        await page.getByTestId('register-nutrition').scrollIntoViewIfNeeded();
+        await page.getByTestId('register-nutrition').click();
+        await page.getByTestId('nutrition-register-notice').waitFor();
+        await page.getByTestId('nutrition-register-close').click();
+        await page.getByRole('button', { name: '뒤로', exact: true }).click();
+      } else if (method === 'search') {
+        await button.click();
+        await page.getByTestId('food-search-screen').waitFor();
+        assert.equal(await page.getByTestId('open-public-food-search').count(), 1);
+        await page.screenshot({ path: 'qa-output/food-search-' + name + '.png', fullPage: true });
+        await page.getByTestId('food-search-manual').click();
+        await page.getByTestId('manual-nutrition-screen').waitFor();
+        await page.getByRole('button', { name: '뒤로', exact: true }).click();
+        await page.getByTestId('food-search-screen').waitFor();
+        await page.getByRole('button', { name: '뒤로', exact: true }).click();
       } else {
         const chooserPromise = page.waitForEvent('filechooser');
         await button.click();

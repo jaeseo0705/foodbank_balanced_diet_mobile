@@ -25,7 +25,7 @@ export function RegistrationArtwork({ size }: { size: number }) {
   );
 }
 
-export type RegistrationMethod = 'camera' | 'photo' | 'manual';
+export type RegistrationMethod = 'camera' | 'photo' | 'search' | 'manual';
 
 export function RegistrationActionIcon({ method, color }: { method: RegistrationMethod; color: string }) {
   return (
@@ -39,6 +39,10 @@ export function RegistrationActionIcon({ method, color }: { method: Registration
           <Rect x={3} y={4} width={26} height={24} rx={3} />
           <Circle cx={22} cy={11} r={2.5} />
           <Path d="m4 23 8-9 7 7 4-4 5 6" />
+        </>}
+        {method === 'search' && <>
+          <Circle cx={13} cy={13} r={9} />
+          <Path d="m20 20 8 8M9 10h8M9 14h6" />
         </>}
         {method === 'manual' && <>
           <Path d="m5 21 16-16a3 3 0 0 1 4 0l2 2a3 3 0 0 1 0 4L11 27l-8 2ZM19 7l6 6M5 21l6 6" />

@@ -109,15 +109,56 @@ test('profile settings returns to profile and logout clears the session', async 
   expect(byId('task-selection-screen')).toBeDefined();
 });
 
-test.each(['manual'])('registration %s selection shows a dismissible preparation notice', async (method) => {
+test('manual entry opens without a photo and starts every nutrient empty', async () => {
   await act(async () => { byId('login-button').props.onPress(); });
   await act(async () => { byId('task-nutrition-registration').props.onPress(); });
-  expect(byId('nutrition-registration-screen')).toBeDefined();
-  await act(async () => { byId('registration-' + method).props.onPress(); });
-  expect(byId('registration-notice')).toBeDefined();
-  await act(async () => { byId('registration-notice-close').props.onPress(); });
+  const order = renderer.root.findAll(node => /^registration-(camera|photo|search|manual)$/.test(node.props.testID ?? '') && node.props.onPress).map(node => node.props.testID);
+  expect([...new Set(order)]).toEqual(['registration-camera', 'registration-photo', 'registration-search', 'registration-manual']);
+  await act(async () => { byId('registration-manual').props.onPress(); });
+  expect(byId('manual-nutrition-screen')).toBeDefined();
+  expect(byId('picked-nutrition-image')).toBeUndefined();
+  expect(recognizeNutritionText).not.toHaveBeenCalled();
+  for (let i = 1; i <= 9; i++) expect(byId('nutrition-value-A00' + i).props.value).toBe('');
+  await act(async () => {
+    byId('manual-food-name').props.onChangeText('테스트 식품');
+    byId('manual-package-quantity').props.onChangeText('80');
+    byId('manual-basis-text').props.onChangeText('총 내용량당');
+    byId('nutrition-value-A001').props.onChangeText('375');
+  });
+  expect(byId('manual-food-name').props.value).toBe('테스트 식품');
+  expect(byId('nutrition-value-A001').props.value).toBe('375');
+  await act(async () => { byId('add-nutrient').props.onPress(); });
+  await act(async () => { byId('nutrient-search').props.onChangeText('식이섬유'); });
+  await act(async () => { byId('nutrient-option-D005').props.onPress(); });
+  expect(byId('nutrition-value-D005').props.value).toBe('');
+  await act(async () => { byId('register-nutrition').props.onPress(); });
+  expect(byId('nutrition-register-notice')).toBeDefined();
+  await act(async () => { byId('nutrition-register-close').props.onPress(); });
   await act(async () => { byId('back-button').props.onPress(); });
-  expect(byId('task-selection-screen')).toBeDefined();
+  expect(byId('nutrition-registration-screen')).toBeDefined();
+  await act(async () => { byId('registration-manual').props.onPress(); });
+  expect(byId('manual-food-name').props.value).toBe('');
+  expect(byId('nutrition-value-A001').props.value).toBe('');
+});
+
+test('food search opens the official DB, handles link errors, and leads to reference entry', async () => {
+  const open = jest.spyOn(Linking, 'openURL').mockRejectedValueOnce(new Error('offline')).mockResolvedValue(undefined);
+  await act(async () => { byId('login-button').props.onPress(); });
+  await act(async () => { byId('task-nutrition-registration').props.onPress(); });
+  await act(async () => { byId('registration-search').props.onPress(); });
+  expect(byId('food-search-screen')).toBeDefined();
+  await act(async () => { byId('open-public-food-search').props.onPress(); });
+  expect(byId('food-search-error')).toBeDefined();
+  await act(async () => { byId('open-public-food-search').props.onPress(); });
+  expect(open).toHaveBeenCalledWith('https://various.foodsafetykorea.go.kr/nutrient/general/food/firstList.do');
+  expect(byId('food-search-error')).toBeUndefined();
+  await act(async () => { byId('food-search-manual').props.onPress(); });
+  expect(byId('manual-nutrition-screen')).toBeDefined();
+  expect(byId('nutrition-value-A001').props.value).toBe('');
+  await act(async () => { byId('back-button').props.onPress(); });
+  expect(byId('food-search-screen')).toBeDefined();
+  await act(async () => { byId('back-button').props.onPress(); });
+  expect(byId('nutrition-registration-screen')).toBeDefined();
 });
 
 const sampleAsset = { uri: 'file:///nutrition.jpg', type: 'image', width: 1600, height: 1200 };
