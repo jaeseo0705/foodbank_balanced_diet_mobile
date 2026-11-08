@@ -4,6 +4,8 @@ import { colors } from '../theme';
 import type { OcrLine } from '../lib/ocr.types';
 import type { NutritionLabelResult, NutritionValue } from '../lib/nutrition.types';
 import { describeNutritionBasis, orderNutritionValues } from '../lib/nutritionReview';
+import { makeManualNutrient } from '../lib/nutrientCatalog';
+import { NutrientPicker } from './NutrientPicker';
 
 const states: Partial<Record<NutritionValue['state'], string>> = {
   trace: '미량', none_declared: '없음', dash: '—', not_detected: '미입력',
@@ -12,7 +14,9 @@ const states: Partial<Record<NutritionValue['state'], string>> = {
 const boundNames = { lt: '미만', lte: '이하', gt: '초과', gte: '이상' };
 const numeric = (text: string) => /^\d*(?:\.\d*)?$/.test(text);
 
-function ValueRow({ item, id }: { item: NutritionValue; id: string }) {
+function ValueRow({ item, id, onRemove, onMoveUp, onMoveDown }: {
+  item: NutritionValue; id: string; onRemove?: () => void; onMoveUp?: () => void; onMoveDown?: () => void;
+}) {
   const uncertain = item.state === 'conflict' || item.alternatives.length > 0;
   const [value, setValue] = useState(uncertain ? '' : item.value ?? '');
   const [bound, setBound] = useState(item.operator ? boundNames[item.operator] : '');
@@ -30,6 +34,11 @@ function ValueRow({ item, id }: { item: NutritionValue; id: string }) {
         {item.operator && <Pressable accessibilityRole="button" accessibilityLabel={`${item.name} 범위 수정`}
           onPress={() => setEditingBound(true)} style={styles.bound}><Text style={styles.body}>{bound || '범위 없음'}</Text></Pressable>}
       </View>
+      {onRemove && <View style={styles.addedActions}>
+        <Pressable testID={`move-up-${item.code}`} accessibilityRole="button" accessibilityLabel={`${item.name} 위로 이동`} disabled={!onMoveUp} onPress={onMoveUp} style={styles.smallAction}><Text style={[styles.removeText, !onMoveUp && { opacity: 0.4 }]}>위로</Text></Pressable>
+        <Pressable testID={`move-down-${item.code}`} accessibilityRole="button" accessibilityLabel={`${item.name} 아래로 이동`} disabled={!onMoveDown} onPress={onMoveDown} style={styles.smallAction}><Text style={[styles.removeText, !onMoveDown && { opacity: 0.4 }]}>아래로</Text></Pressable>
+        <Pressable testID={`remove-added-${item.code}`} accessibilityRole="button" accessibilityLabel={`${item.name} 추가 취소`} onPress={onRemove} style={styles.smallAction}><Text style={styles.removeText}>추가 취소</Text></Pressable>
+      </View>}
       {item.printedValue && uncertain && <Text style={styles.hint}>읽은 값: {item.printedValue}</Text>}
       {item.needsReview && <Text style={styles.hint}>{item.reviewReasons.join(' · ') || '사진 확인 필요'}</Text>}
       {item.notices.map((notice, i) => <Text key={i} style={styles.hint}>{notice}</Text>)}
@@ -62,8 +71,32 @@ export function NutritionReview({ result, lines = [] }: { result: NutritionLabel
   const [draftQuantity, setDraftQuantity] = useState(packageQuantity);
   const [draftUnit, setDraftUnit] = useState(packageUnit);
   const [registrationNotice, setRegistrationNotice] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [manualValues, setManualValues] = useState<NutritionValue[]>([]);
   const unresolved = [...result.review.unmatched, ...result.review.ambiguous];
-  const values = orderNutritionValues(result, lines);
+  const originalValues = orderNutritionValues(result, lines);
+  const [rowOrder, setRowOrder] = useState(() => originalValues.map(item => item.code));
+  const values = [...originalValues, ...manualValues].sort((a, b) => rowOrder.indexOf(a.code) - rowOrder.indexOf(b.code));
+  function moveNutrient(code: string | undefined, delta: number) {
+    setRowOrder(previous => {
+      const next = [...previous], index = next.indexOf(code), target = index + delta;
+      if (index < 0 || target < 0 || target >= next.length) return previous;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  }
+  function removeNutrient(code: string | undefined) {
+    setManualValues(previous => previous.filter(item => item.code !== code));
+    setRowOrder(previous => previous.filter(item => item !== code));
+  }
+  const selectedCodes = new Set(values.map(item => item.code).filter((code): code is string => !!code));
+  function addNutrient(code: string) {
+    const item = makeManualNutrient(code);
+    if (!item || originalValues.some(value => value.code === code)) return;
+    setManualValues(previous => previous.some(value => value.code === code) ? previous : [...previous, item]);
+    setRowOrder(previous => previous.includes(code) ? previous : [...previous, code]);
+    setPickerOpen(false);
+  }
   const multipleBases = result.review.notes.some(note => note.includes('여러 기준') || note.includes('기준량이 여러 개'));
   function editBasis() {
     setDraftBasis(basisText); setDraftQuantity(packageQuantity); setDraftUnit(packageUnit); setEditingBasis(true);
@@ -83,7 +116,13 @@ export function NutritionReview({ result, lines = [] }: { result: NutritionLabel
         </View>
         {multipleBases && <Text style={styles.hint}>사진에 기준량이 여러 개 있습니다. 사용할 열 하나와 각 함량을 확인해 주세요.</Text>}
         {!multipleBases && (result.basis.needsReview || result.basis.needsUnitWeight) && <Text style={styles.hint}>사진에 적힌 기준을 확인해 주세요.</Text>}
-        {values.map((item, i) => <ValueRow key={item.code ?? i} item={item} id={`nutrition-value-${item.code}`} />)}
+        {values.map((item, i) => <ValueRow key={item.code ?? i} item={item} id={`nutrition-value-${item.code}`}
+          onRemove={manualValues.some(value => value.code === item.code) ? () => removeNutrient(item.code) : undefined}
+          onMoveUp={i > 0 ? () => moveNutrient(item.code, -1) : undefined}
+          onMoveDown={i < values.length - 1 ? () => moveNutrient(item.code, 1) : undefined} />)}
+        <Pressable testID="add-nutrient" accessibilityRole="button" accessibilityLabel="영양성분 추가" onPress={() => setPickerOpen(true)} style={styles.addNutrient}>
+          <Text style={styles.editText}>＋ 영양성분 추가</Text>
+        </Pressable>
         {unresolved.length > 0 && <Text style={styles.subtitle}>성분명 확인 필요</Text>}
         {unresolved.map((item, i) => <Text key={i} style={styles.body}>{item.printedName ?? item.name} · {item.printedValue ?? '값 확인 필요'}</Text>)}
       </View>
@@ -94,6 +133,7 @@ export function NutritionReview({ result, lines = [] }: { result: NutritionLabel
         </Pressable>
         <Text style={styles.registrationHint}>사진과 영양정보가 일치하는지 확인한 후 등록해 주세요.</Text>
       </View>
+      {pickerOpen && <NutrientPicker selectedCodes={selectedCodes} onSelect={addNutrient} onClose={() => setPickerOpen(false)} />}
       <Modal visible={editingBasis} transparent animationType="fade" onRequestClose={() => setEditingBasis(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.backdrop}><View style={styles.modal} accessibilityViewIsModal testID="nutrition-basis-editor">
           <Text accessibilityRole="header" style={styles.title}>영양정보 기준 수정</Text>
@@ -145,6 +185,10 @@ const styles = StyleSheet.create({
   unit: { color: colors.text, fontSize: 16, minWidth: 28 },
   bound: { minHeight: 44, justifyContent: 'center' },
   choice: { borderWidth: 1, borderColor: colors.cardBorder, borderRadius: 8, padding: 10 },
+  addNutrient: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 10, borderWidth: 1, borderColor: colors.cardBorder, marginTop: 8 },
+  addedActions: { flexDirection: 'row', alignSelf: 'flex-end', gap: 12 },
+  smallAction: { minHeight: 44, justifyContent: 'center' },
+  removeText: { color: colors.body, fontSize: 14 },
   registration: { gap: 10 },
   register: { minHeight: 56, borderRadius: 16, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   registerText: { color: colors.background, fontSize: 20, fontWeight: '700' },

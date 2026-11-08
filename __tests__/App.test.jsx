@@ -316,3 +316,43 @@ test('a new photo clears an already displayed OCR result', async () => {
   expect(byId('ocr-result')).toBeUndefined();
   expect(byId('picked-nutrition-image').props.source.uri).toBe('file:///replacement.jpg');
 });
+
+test('a missed nutrient is selected from the dictionary, edited, deduplicated, and cleared with the photo', async () => {
+  recognizeNutritionText.mockResolvedValue({ text: '나트륨 550 mg', lines: [], languages: ['ko-KR'], nutrition: {
+    basis: { type: 'total_package', quantity: '80', unit: 'g', needsReview: false, needsUnitWeight: false },
+    required: [{ code: 'A002', name: '나트륨', value: '550', unit: 'mg', state: 'exact', needsReview: false, reviewReasons: [], notices: [], alternatives: [] }],
+    additional: [], review: { unmatched: [], ambiguous: [], conflicts: [], leftoverText: [], notes: [] },
+  } });
+  await selectOcrPhoto();
+  await act(async () => { byId('read-nutrition-text').props.onPress(); });
+  await act(async () => { byId('add-nutrient').props.onPress(); });
+  await act(async () => { byId('nutrient-search').props.onChangeText('없는성분123'); });
+  expect(byId('nutrient-search-empty')).toBeDefined();
+  expect(renderer.root.findAllByProps({ accessibilityLabel: '새 성분 만들기' })).toHaveLength(0);
+  await act(async () => { byId('nutrient-search').props.onChangeText('식이 섬유'); });
+  await act(async () => { byId('nutrient-option-D005').props.onPress(); });
+  expect(byId('nutrient-picker')).toBeUndefined();
+  expect(byId('nutrition-value-D005').props.value).toBe('');
+  await act(async () => { byId('nutrition-value-D005').props.onChangeText('4.9'); });
+  expect(byId('nutrition-value-D005').props.value).toBe('4.9');
+  await act(async () => { byId('move-up-D005').props.onPress(); });
+  expect(renderer.root.findAll(node => node.type === TextInput && /^nutrition-value-/.test(node.props.testID ?? '')).map(node => node.props.testID)).toEqual(['nutrition-value-D005', 'nutrition-value-A002']);
+  expect(byId('nutrition-value-D005').props.value).toBe('4.9');
+  expect(byId('move-up-D005').props.disabled).toBe(true);
+  await act(async () => { byId('add-nutrient').props.onPress(); });
+  await act(async () => { byId('nutrient-search').props.onChangeText('식이섬유'); });
+  expect(byId('nutrient-option-D005').props.disabled).toBe(true);
+  await act(async () => { byId('nutrient-search').props.onChangeText('나트륨'); });
+  expect(byId('nutrient-option-A002').props.disabled).toBe(true);
+  await act(async () => { byId('nutrient-picker-close').props.onPress(); });
+  expect(byId('nutrition-value-D005').props.value).toBe('4.9');
+  await act(async () => { byId('remove-added-D005').props.onPress(); });
+  expect(byId('nutrition-value-D005')).toBeUndefined();
+  await act(async () => { byId('add-nutrient').props.onPress(); });
+  await act(async () => { byId('nutrient-search').props.onChangeText('식이섬유'); });
+  expect(byId('nutrient-option-D005').props.disabled).toBe(false);
+  await act(async () => { byId('nutrient-option-D005').props.onPress(); });
+  await act(async () => { byId('remove-nutrition-photo').props.onPress(); });
+  expect(byId('nutrition-review')).toBeUndefined();
+  expect(byId('nutrition-value-D005')).toBeUndefined();
+});
