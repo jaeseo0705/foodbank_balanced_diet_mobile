@@ -68,8 +68,15 @@ try {
         await page.getByTestId('fms-food-summary').waitFor();
         await page.getByTestId('manual-package-quantity').fill('3');
         assert.equal(await page.getByTestId('manual-package-quantity').inputValue(), '3');
+        const quantityBox = await page.getByTestId('manual-package-quantity').boundingBox();
+        const unitBox = await page.getByTestId('manual-package-unit').boundingBox();
+        assert.ok(quantityBox && unitBox && Math.abs(quantityBox.y - unitBox.y) < 4, 'Quantity and unit share one row');
+        assert.ok(unitBox.width <= 110, 'Unit selector remains compact');
         await page.getByTestId('manual-package-unit').click();
+        await page.getByTestId('manual-package-unit-dialog').waitFor();
         await page.getByTestId('manual-package-unit-kg').click();
+        assert.equal(await page.getByTestId('manual-package-unit-dialog').count(), 0);
+        assert.equal((await page.getByTestId('manual-package-unit').innerText()).replace(/\s/g, ''), 'kg▾');
         await page.getByTestId('manual-basis-text').fill('100 g당');
         await page.getByTestId('nutrition-value-A001').fill('100');
         assert.equal(await page.getByTestId('nutrition-value-A001').inputValue(), '100');

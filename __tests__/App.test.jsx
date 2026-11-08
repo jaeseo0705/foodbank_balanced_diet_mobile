@@ -136,6 +136,14 @@ test('manual entry opens without a photo and starts every nutrient empty', async
   await act(async () => { byId('manual-package-unit-custom').props.onPress(); });
   await act(async () => { byId('manual-package-unit-custom-value').props.onChangeText('봉'); });
   expect(byId('manual-package-unit-custom-value').props.value).toBe('봉');
+  await act(async () => { byId('manual-package-unit-apply').props.onPress(); });
+  expect(byId('manual-package-unit-dialog')).toBeUndefined();
+  await act(async () => { byId('manual-package-unit').props.onPress(); });
+  await act(async () => { byId('manual-package-unit-custom').props.onPress(); });
+  expect(byId('manual-package-unit-custom-value').props.value).toBe('봉');
+  await act(async () => { byId('manual-package-unit-custom-value').props.onChangeText('취소할 단위'); });
+  await act(async () => { byId('manual-package-unit-cancel').props.onPress(); });
+
 
   await act(async () => { byId('add-nutrient').props.onPress(); });
   await act(async () => { byId('nutrient-search').props.onChangeText('식이섬유'); });

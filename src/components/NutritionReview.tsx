@@ -124,7 +124,7 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food 
           </Pressable>
         </View> : <View style={styles.manualFields}>
           <Text style={styles.body}>총 내용량</Text>
-          <View style={styles.valueLine}>
+          <View style={styles.quantityLine}>
             <QuantityInput testID="manual-package-quantity" accessibilityLabel="총 내용량" value={packageQuantity}
               onChangeText={setPackageQuantity} style={styles.input} />
             <UnitPicker id="manual-package-unit" value={packageUnit} onChange={setPackageUnit} />
@@ -158,7 +158,7 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food 
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.backdrop}><View style={styles.modal} accessibilityViewIsModal testID="nutrition-basis-editor">
           <Text accessibilityRole="header" style={styles.title}>영양정보 기준 수정</Text>
           <Text style={styles.body}>총 내용량</Text>
-          <View style={styles.valueLine}>
+          <View style={styles.quantityLine}>
             <QuantityInput testID="nutrition-package-quantity" accessibilityLabel="총 내용량" value={draftQuantity}
               onChangeText={setDraftQuantity} style={styles.input} />
             <UnitPicker id="nutrition-package-unit" value={draftUnit} onChange={setDraftUnit} />
@@ -200,6 +200,7 @@ const styles = StyleSheet.create({
   edit: { minHeight: 44, paddingHorizontal: 10, justifyContent: 'center' },
   editText: { color: colors.primary, fontSize: 16, fontWeight: '600' },
   valueRow: { borderTopWidth: 1, borderTopColor: colors.cardBorder, paddingTop: 14, paddingBottom: 4, gap: 6 },
+  quantityLine: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'nowrap' },
   valueLine: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   name: { color: colors.text, fontSize: 17, fontWeight: '600', flexGrow: 1, flexBasis: 90 },
   input: { minWidth: 76, maxWidth: 130, minHeight: 46, padding: 10, color: colors.text, fontSize: 18, borderColor: colors.cardBorder, borderWidth: 1, borderRadius: 10, backgroundColor: colors.background, textAlign: 'right' },
