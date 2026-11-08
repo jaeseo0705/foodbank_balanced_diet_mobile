@@ -10,6 +10,7 @@ import { colors } from '../theme';
 import { selectNutritionPhoto, type PhotoMethod } from '../lib/nutritionPhoto';
 import { recognizeNutritionText } from '../lib/ocr';
 import { OcrError, type OcrResult } from '../lib/ocr.types';
+import type { FmsFood } from '../lib/nutritionValidation';
 import { ManualNutritionScreen } from './ManualNutritionScreen';
 import { FoodSearchScreen } from './FoodSearchScreen';
 
@@ -22,7 +23,7 @@ const methods: ReadonlyArray<{ id: RegistrationMethod; label: string }> = [
 type Notice = { title: string; message: string; settings?: boolean };
 
 
-export function NutritionRegistrationScreen({ onBack }: { onBack: () => void }) {
+export function NutritionRegistrationScreen({ onBack, food }: { onBack: () => void; food?: FmsFood }) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [route, setRoute] = useState<'methods' | 'manual' | 'search' | 'reference'>('methods');
@@ -158,7 +159,7 @@ export function NutritionRegistrationScreen({ onBack }: { onBack: () => void }) 
   const artworkSize = Math.min(250, contentWidth * 0.68);
   const heroHeight = Math.max(210, Math.min(300, availableHeight * 0.38));
 
-  if (route === 'manual' || route === 'reference') return <ManualNutritionScreen reference={route === 'reference'} onBack={() => setRoute(route === 'reference' ? 'search' : 'methods')} />;
+  if (route === 'manual' || route === 'reference') return <ManualNutritionScreen food={food} reference={route === 'reference'} onBack={() => setRoute(route === 'reference' ? 'search' : 'methods')} />;
   if (route === 'search') return <FoodSearchScreen onBack={() => setRoute('methods')} onManual={() => setRoute('reference')} />;
 
   return (
@@ -229,7 +230,7 @@ export function NutritionRegistrationScreen({ onBack }: { onBack: () => void }) 
                   {ocrResult.text.trim() === '' ? (
                     <Text testID="ocr-empty" style={styles.resultHint}>글자를 찾지 못했습니다. 영양성분표가 선명하게 보이도록 다시 촬영해 주세요.</Text>
                   ) : ocrResult.nutrition ? (
-                    <NutritionReview key={ocrToken.current} result={ocrResult.nutrition} lines={ocrResult.lines} />
+                    <NutritionReview food={food} key={ocrToken.current} result={ocrResult.nutrition} lines={ocrResult.lines} />
                   ) : (
                     <Text testID="ocr-unavailable" style={styles.resultHint}>{ocrResult.nutritionError ?? '영양정보를 정리하지 못했습니다. 최신 앱인지 확인한 뒤 다시 시도해 주세요.'}</Text>
                   )}

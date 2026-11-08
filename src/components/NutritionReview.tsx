@@ -6,19 +6,16 @@ import type { NutritionLabelResult, NutritionValue } from '../lib/nutrition.type
 import { describeNutritionBasis, orderNutritionValues } from '../lib/nutritionReview';
 import { makeManualNutrient } from '../lib/nutrientCatalog';
 import { NutrientPicker } from './NutrientPicker';
+import { QuantityInput, UnitPicker } from './QuantityInput';
+import { isNutritionNumber, missingRequiredNutrients } from '../lib/nutritionValidation';
+import type { FmsFood } from '../lib/nutritionValidation';
 
-const states: Partial<Record<NutritionValue['state'], string>> = {
-  trace: '미량', none_declared: '없음', dash: '—', not_detected: '미입력',
-  conflict: '확인 필요', ambiguous: '확인 필요',
-};
 const boundNames = { lt: '미만', lte: '이하', gt: '초과', gte: '이상' };
-const numeric = (text: string) => /^\d*(?:\.\d*)?$/.test(text);
 
-function ValueRow({ item, id, onRemove, onMoveUp, onMoveDown }: {
-  item: NutritionValue; id: string; onRemove?: () => void; onMoveUp?: () => void; onMoveDown?: () => void;
+function ValueRow({ item, id, value, onChange, onRemove, onMoveUp, onMoveDown }: {
+  item: NutritionValue; id: string; value: string; onChange: (value: string) => void; onRemove?: () => void; onMoveUp?: () => void; onMoveDown?: () => void;
 }) {
   const uncertain = item.state === 'conflict' || item.alternatives.length > 0;
-  const [value, setValue] = useState(uncertain ? '' : item.value ?? '');
   const [bound, setBound] = useState(item.operator ? boundNames[item.operator] : '');
   const [editingBound, setEditingBound] = useState(false);
   const unit = [item.unit, item.unitQualifier].filter(Boolean).join(' ');
@@ -26,9 +23,8 @@ function ValueRow({ item, id, onRemove, onMoveUp, onMoveDown }: {
     <View testID={`nutrition-row-${item.code}`} style={styles.valueRow}>
       <View style={styles.valueLine}>
         <Text style={styles.name}>{item.name}</Text>
-        <TextInput testID={id} accessibilityLabel={`${item.name} 함량`} value={value}
-          onChangeText={(text) => { if (numeric(text)) setValue(text); }}
-          keyboardType="decimal-pad" placeholder={states[item.state] ?? '미입력'}
+        <QuantityInput testID={id} accessibilityLabel={`${item.name} 함량`} value={value}
+          onChangeText={onChange}
           placeholderTextColor={colors.body} style={styles.input} />
         <Text style={styles.unit}>{unit}</Text>
         {item.operator && <Pressable accessibilityRole="button" accessibilityLabel={`${item.name} 범위 수정`}
@@ -44,7 +40,7 @@ function ValueRow({ item, id, onRemove, onMoveUp, onMoveDown }: {
       {item.notices.map((notice, i) => <Text key={i} style={styles.hint}>{notice}</Text>)}
       {item.alternatives.map((choice, i) => (
         <Pressable key={i} accessibilityRole="button" accessibilityLabel={`${item.name} ${choice.value} ${choice.unit} 선택`}
-          onPress={() => setValue(choice.value)} style={styles.choice}>
+          onPress={() => onChange(choice.value)} style={styles.choice}>
           <Text style={styles.body}>{choice.value} {choice.unit} — {choice.label}</Text>
         </Pressable>
       ))}
@@ -62,7 +58,7 @@ function ValueRow({ item, id, onRemove, onMoveUp, onMoveDown }: {
   );
 }
 
-export function NutritionReview({ result, lines = [], entryMode = 'photo' }: { result: NutritionLabelResult; lines?: OcrLine[]; entryMode?: 'photo' | 'manual' | 'reference' }) {
+export function NutritionReview({ result, lines = [], entryMode = 'photo', food }: { food?: FmsFood; result: NutritionLabelResult; lines?: OcrLine[]; entryMode?: 'photo' | 'manual' | 'reference' }) {
   const [basisText, setBasisText] = useState(entryMode === 'photo' ? describeNutritionBasis(result.basis) : '');
   const [packageQuantity, setPackageQuantity] = useState(result.package?.quantity ?? '');
   const [packageUnit, setPackageUnit] = useState(result.package?.unit ?? 'g');
@@ -75,6 +71,17 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo' }: { r
   const [manualValues, setManualValues] = useState<NutritionValue[]>([]);
   const unresolved = [...result.review.unmatched, ...result.review.ambiguous];
   const originalValues = orderNutritionValues(result, lines);
+  const [valueDrafts, setValueDrafts] = useState<Record<string, string>>(() => Object.fromEntries(originalValues.map(item => [item.code ?? item.name, item.state === 'conflict' || item.alternatives.length ? '' : item.value ?? ''])));
+  const [noticeText, setNoticeText] = useState('');
+  function register() {
+    const missing = missingRequiredNutrients(valueDrafts);
+    const invalid = values.filter(item => { const draft = valueDrafts[item.code ?? item.name] ?? ''; return draft.trim() !== '' && !isNutritionNumber(draft); });
+    setNoticeText(missing.length ? `필수 영양성분의 숫자를 확인해 주세요: ${missing.join(', ')}. 표시가 0이면 0을 입력해 주세요.`
+      : invalid.length ? `숫자를 확인해 주세요: ${invalid.map(item => item.name).join(', ')}.`
+      : !food ? 'FMS에 등록된 식품을 먼저 불러와야 합니다. 현재 FMS 식품 불러오기는 연결되어 있지 않습니다.'
+      : '현재는 시험 단계로, 입력값은 저장되지 않습니다.');
+    setRegistrationNotice(true);
+  }
   const [rowOrder, setRowOrder] = useState(() => originalValues.map(item => item.code));
   const values = [...originalValues, ...manualValues].sort((a, b) => rowOrder.indexOf(a.code) - rowOrder.indexOf(b.code));
   function moveNutrient(code: string | undefined, delta: number) {
@@ -86,6 +93,7 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo' }: { r
     });
   }
   function removeNutrient(code: string | undefined) {
+    setValueDrafts(previous => { const next = { ...previous }; delete next[code ?? '']; return next; });
     setManualValues(previous => previous.filter(item => item.code !== code));
     setRowOrder(previous => previous.filter(item => item !== code));
   }
@@ -95,6 +103,7 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo' }: { r
     if (!item || originalValues.some(value => value.code === code)) return;
     setManualValues(previous => previous.some(value => value.code === code) ? previous : [...previous, item]);
     setRowOrder(previous => previous.includes(code) ? previous : [...previous, code]);
+    setValueDrafts(previous => ({ ...previous, [code]: '' }));
     setPickerOpen(false);
   }
   const multipleBases = result.review.notes.some(note => note.includes('여러 기준') || note.includes('기준량이 여러 개'));
@@ -104,6 +113,7 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo' }: { r
   return (
     <View testID="nutrition-review" style={styles.section}>
       <View style={styles.card}>
+        {entryMode === 'photo' && <View testID="photo-fms-food-summary"><Text style={styles.body}>{food?.name ?? '선택된 FMS 식품이 없습니다'}</Text></View>}
         <Text accessibilityRole="header" style={styles.title}>{entryMode === 'photo' ? '영양정보 확인' : '영양정보 입력'}</Text>
         {entryMode === 'photo' ? <View style={styles.summary}>
           <View style={{ flex: 1, gap: 6 }}>
@@ -116,9 +126,9 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo' }: { r
         </View> : <View style={styles.manualFields}>
           <Text style={styles.body}>총 내용량</Text>
           <View style={styles.valueLine}>
-            <TextInput testID="manual-package-quantity" accessibilityLabel="총 내용량" value={packageQuantity}
-              onChangeText={text => { if (numeric(text)) setPackageQuantity(text); }} keyboardType="decimal-pad" placeholder="미입력" style={styles.input} />
-            <TextInput testID="manual-package-unit" accessibilityLabel="총 내용량 단위" value={packageUnit} onChangeText={setPackageUnit} style={styles.input} />
+            <QuantityInput testID="manual-package-quantity" accessibilityLabel="총 내용량" value={packageQuantity}
+              onChangeText={setPackageQuantity} style={styles.input} />
+            <UnitPicker id="manual-package-unit" value={packageUnit} onChange={setPackageUnit} />
           </View>
           <Text style={styles.body}>영양정보 기준</Text>
           <TextInput testID="manual-basis-text" accessibilityLabel="영양정보 기준" value={basisText} onChangeText={setBasisText}
@@ -126,7 +136,8 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo' }: { r
         </View>}
         {multipleBases && <Text style={styles.hint}>사진에 기준량이 여러 개 있습니다. 사용할 열 하나와 각 함량을 확인해 주세요.</Text>}
         {entryMode === 'photo' && !multipleBases && (result.basis.needsReview || result.basis.needsUnitWeight) && <Text style={styles.hint}>사진에 적힌 기준을 확인해 주세요.</Text>}
-        {values.map((item, i) => <ValueRow key={item.code ?? i} item={item} id={`nutrition-value-${item.code}`}
+        {values.map((item, i) => <ValueRow key={item.code ?? i} item={item} id={`nutrition-value-${item.code}`} value={valueDrafts[item.code ?? item.name] ?? ''}
+          onChange={value => setValueDrafts(previous => ({ ...previous, [item.code ?? item.name]: value }))}
           onRemove={manualValues.some(value => value.code === item.code) ? () => removeNutrient(item.code) : undefined}
           onMoveUp={i > 0 ? () => moveNutrient(item.code, -1) : undefined}
           onMoveDown={i < values.length - 1 ? () => moveNutrient(item.code, 1) : undefined} />)}
@@ -138,10 +149,10 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo' }: { r
       </View>
       <View style={styles.registration}>
         <Pressable testID="register-nutrition" accessibilityRole="button" accessibilityLabel="등록"
-          onPress={() => setRegistrationNotice(true)} style={({ pressed }) => [styles.register, pressed && { opacity: 0.8 }]}>
+          onPress={register} style={({ pressed }) => [styles.register, pressed && { opacity: 0.8 }]}>
           <Text style={styles.registerText}>등록</Text>
         </Pressable>
-        <Text style={styles.registrationHint}>{entryMode === 'photo' ? '사진과 영양정보가 일치하는지 확인한 후 등록해 주세요.' : '입력한 식품명·기준량·영양정보를 확인한 후 등록해 주세요.'}</Text>
+        <Text style={styles.registrationHint}>{entryMode === 'photo' ? '사진과 영양정보가 일치하는지 확인한 후 등록해 주세요.' : '선택한 FMS 식품·기준량·영양정보를 확인한 후 등록해 주세요.'}</Text>
       </View>
       {pickerOpen && <NutrientPicker selectedCodes={selectedCodes} onSelect={addNutrient} onClose={() => setPickerOpen(false)} />}
       <Modal visible={editingBasis} transparent animationType="fade" onRequestClose={() => setEditingBasis(false)}>
@@ -149,9 +160,9 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo' }: { r
           <Text accessibilityRole="header" style={styles.title}>영양정보 기준 수정</Text>
           <Text style={styles.body}>총 내용량</Text>
           <View style={styles.valueLine}>
-            <TextInput testID="nutrition-package-quantity" accessibilityLabel="총 내용량" value={draftQuantity}
-              onChangeText={text => { if (numeric(text)) setDraftQuantity(text); }} keyboardType="decimal-pad" style={styles.input} />
-            <TextInput accessibilityLabel="총 내용량 단위" value={draftUnit} onChangeText={setDraftUnit} style={styles.input} />
+            <QuantityInput testID="nutrition-package-quantity" accessibilityLabel="총 내용량" value={draftQuantity}
+              onChangeText={setDraftQuantity} style={styles.input} />
+            <UnitPicker id="nutrition-package-unit" value={draftUnit} onChange={setDraftUnit} />
           </View>
           <Text style={styles.body}>영양정보 기준</Text>
           <TextInput testID="nutrition-basis-text" accessibilityLabel="영양정보 기준" value={draftBasis} onChangeText={setDraftBasis}
@@ -160,7 +171,7 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo' }: { r
           <View style={styles.summary}>
             <Pressable accessibilityRole="button" accessibilityLabel="기준 수정 취소" onPress={() => setEditingBasis(false)} style={styles.edit}><Text style={styles.editText}>취소</Text></Pressable>
             <Pressable testID="nutrition-basis-apply" accessibilityRole="button" accessibilityLabel="기준 수정 적용"
-              disabled={!draftBasis.trim() || (!!draftQuantity && Number(draftQuantity) <= 0)}
+              disabled={!draftBasis.trim() || !draftUnit.trim() || (!!draftQuantity && (!isNutritionNumber(draftQuantity) || Number(draftQuantity) <= 0))}
               onPress={() => { setBasisText(draftBasis.trim()); setPackageQuantity(draftQuantity); setPackageUnit(draftUnit.trim()); setEditingBasis(false); }} style={styles.edit}>
               <Text style={styles.editText}>적용</Text>
             </Pressable>
@@ -170,7 +181,7 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo' }: { r
       <Modal visible={registrationNotice} transparent animationType="fade" onRequestClose={() => setRegistrationNotice(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.backdrop}><View style={styles.modal} accessibilityViewIsModal testID="nutrition-register-notice">
           <Text accessibilityRole="header" style={styles.title}>등록 안내</Text>
-          <Text style={styles.body}>현재는 시험 단계로, 입력값은 저장되지 않습니다.</Text>
+          <Text testID="nutrition-registration-message" style={styles.body}>{noticeText}</Text>
           <Pressable testID="nutrition-register-close" accessibilityRole="button" accessibilityLabel="등록 안내 확인" onPress={() => setRegistrationNotice(false)} style={styles.edit}><Text style={styles.editText}>확인</Text></Pressable>
         </View></KeyboardAvoidingView>
       </Modal>

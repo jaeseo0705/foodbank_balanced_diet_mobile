@@ -65,7 +65,11 @@ try {
       if (method === 'manual') {
         await button.click();
         await page.getByTestId('manual-nutrition-screen').waitFor();
-        await page.getByTestId('manual-food-name').fill('직접 입력 시험');
+        await page.getByTestId('fms-food-summary').waitFor();
+        await page.getByTestId('manual-package-quantity').fill('3');
+        assert.equal(await page.getByTestId('manual-package-quantity').inputValue(), '3');
+        await page.getByTestId('manual-package-unit').click();
+        await page.getByTestId('manual-package-unit-kg').click();
         await page.getByTestId('manual-basis-text').fill('100 g당');
         await page.getByTestId('nutrition-value-A001').fill('100');
         assert.equal(await page.getByTestId('nutrition-value-A001').inputValue(), '100');

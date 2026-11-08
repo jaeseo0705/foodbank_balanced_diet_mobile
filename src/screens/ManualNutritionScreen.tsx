@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackIcon } from '../components/TaskIcons';
 import { NutritionReview } from '../components/NutritionReview';
 import { createManualNutrition } from '../lib/manualNutrition';
+import type { FmsFood } from '../lib/nutritionValidation';
 import { colors } from '../theme';
 
-export function ManualNutritionScreen({ onBack, reference = false }: { onBack: () => void; reference?: boolean }) {
-  const [foodName, setFoodName] = useState('');
+export function ManualNutritionScreen({ onBack, reference = false, food }: { onBack: () => void; reference?: boolean; food?: FmsFood }) {
   const [result] = useState(createManualNutrition);
   return (
     <SafeAreaView testID="section-screen" style={styles.screen}>
@@ -22,9 +22,11 @@ export function ManualNutritionScreen({ onBack, reference = false }: { onBack: (
             <Text style={styles.body}>출처: 식약처 K-FIND 식품영양성분 DB</Text>
             <Text style={styles.body}>조회한 식품의 종류·조리 상태·함량 기준량을 확인해 입력해 주세요. 해당 제품의 실제 함량과 다를 수 있습니다.</Text>
           </View>}
-          <Text style={styles.label}>식품명</Text>
-          <TextInput testID="manual-food-name" accessibilityLabel="식품명" value={foodName} onChangeText={setFoodName} placeholder="식품명을 입력해 주세요" style={styles.input} />
-          <NutritionReview result={result} entryMode={reference ? 'reference' : 'manual'} />
+          <View testID="fms-food-summary" style={styles.source}>
+            <Text style={styles.label}>{food?.name ?? '선택된 FMS 식품이 없습니다'}</Text>
+            <Text style={styles.body}>{food ? `FMS 식품 번호: ${food.id}` : 'FMS에 사전 등록된 식품을 불러와 영양정보를 입력합니다. 현재 불러오기 기능은 연결되어 있지 않습니다.'}</Text>
+          </View>
+          <NutritionReview food={food} result={result} entryMode={reference ? 'reference' : 'manual'} />
         </View>
       </ScrollView>
     </SafeAreaView>

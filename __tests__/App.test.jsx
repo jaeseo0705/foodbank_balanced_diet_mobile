@@ -120,24 +120,35 @@ test('manual entry opens without a photo and starts every nutrient empty', async
   expect(recognizeNutritionText).not.toHaveBeenCalled();
   for (let i = 1; i <= 9; i++) expect(byId('nutrition-value-A00' + i).props.value).toBe('');
   await act(async () => {
-    byId('manual-food-name').props.onChangeText('테스트 식품');
     byId('manual-package-quantity').props.onChangeText('80');
     byId('manual-basis-text').props.onChangeText('총 내용량당');
     byId('nutrition-value-A001').props.onChangeText('375');
   });
-  expect(byId('manual-food-name').props.value).toBe('테스트 식품');
+  expect(byId('manual-food-name')).toBeUndefined();
+  expect(byId('fms-food-summary')).toBeDefined();
   expect(byId('nutrition-value-A001').props.value).toBe('375');
+  expect(byId('nutrition-value-A002').props.placeholder ?? '').toBe('');
+  await act(async () => { byId('manual-package-quantity').props.onChangeText('3'); });
+  expect(byId('manual-package-quantity').props.value).toBe('3');
+  await act(async () => { byId('manual-package-unit').props.onPress(); });
+  await act(async () => { byId('manual-package-unit-kg').props.onPress(); });
+  await act(async () => { byId('manual-package-unit').props.onPress(); });
+  await act(async () => { byId('manual-package-unit-custom').props.onPress(); });
+  await act(async () => { byId('manual-package-unit-custom-value').props.onChangeText('봉'); });
+  expect(byId('manual-package-unit-custom-value').props.value).toBe('봉');
+
   await act(async () => { byId('add-nutrient').props.onPress(); });
   await act(async () => { byId('nutrient-search').props.onChangeText('식이섬유'); });
   await act(async () => { byId('nutrient-option-D005').props.onPress(); });
   expect(byId('nutrition-value-D005').props.value).toBe('');
   await act(async () => { byId('register-nutrition').props.onPress(); });
   expect(byId('nutrition-register-notice')).toBeDefined();
+  expect(byId('nutrition-registration-message').props.children).toContain('필수 영양성분');
   await act(async () => { byId('nutrition-register-close').props.onPress(); });
   await act(async () => { byId('back-button').props.onPress(); });
   expect(byId('nutrition-registration-screen')).toBeDefined();
   await act(async () => { byId('registration-manual').props.onPress(); });
-  expect(byId('manual-food-name').props.value).toBe('');
+  expect(byId('fms-food-summary')).toBeDefined();
   expect(byId('nutrition-value-A001').props.value).toBe('');
 });
 
@@ -286,7 +297,7 @@ test('structured nutrition allows edits, keeps missing values empty, and clears 
   await act(async () => { byId('nutrition-value-A002').props.onChangeText('560'); });
   expect(byId('nutrition-value-A002').props.value).toBe('560');
   await act(async () => { byId('nutrition-value-A002').props.onChangeText('56%'); });
-  expect(byId('nutrition-value-A002').props.value).toBe('560');
+  expect(byId('nutrition-value-A002').props.value).toBe('56%');
   expect(byId('ocr-text')).toBeUndefined();
   await act(async () => { byId('remove-nutrition-photo').props.onPress(); });
   expect(byId('nutrition-review')).toBeUndefined();
