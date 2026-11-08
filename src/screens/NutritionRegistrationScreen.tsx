@@ -212,27 +212,21 @@ export function NutritionRegistrationScreen({ onBack }: { onBack: () => void }) 
                 {ocrBusy && <ActivityIndicator color={colors.background} />}
                 <Text style={styles.readButtonText}>{ocrBusy ? '영양정보 읽는 중…' : '영양정보 읽기'}</Text>
               </Pressable>
-              {ocrResult?.nutrition && <NutritionReview key={ocrToken.current} result={ocrResult.nutrition} />}
-              {ocrResult !== null && !ocrResult.nutrition && ocrResult.text.trim() !== '' && (
-                <Text style={styles.resultHint}>{ocrResult.nutritionError ?? '성분별 정리를 사용하려면 최신 코드로 앱을 다시 빌드해 주세요.'}</Text>
-              )}
               {ocrResult !== null && (
-                <View testID="ocr-result" style={styles.resultCard}>
-                  <Text accessibilityRole="header" style={styles.resultTitle}>인식한 글자</Text>
-                  {ocrResult.text.trim() ? (
-                    <>
-                      <Text style={styles.resultHint}>사진과 비교해 확인해 주세요.</Text>
-                      <Text testID="ocr-text" selectable style={styles.resultText}>{ocrResult.text}</Text>
-                    </>
-                  ) : (
+                <View testID="ocr-result">
+                  {ocrResult.text.trim() === '' ? (
                     <Text testID="ocr-empty" style={styles.resultHint}>글자를 찾지 못했습니다. 영양성분표가 선명하게 보이도록 다시 촬영해 주세요.</Text>
+                  ) : ocrResult.nutrition ? (
+                    <NutritionReview key={ocrToken.current} result={ocrResult.nutrition} lines={ocrResult.lines} />
+                  ) : (
+                    <Text testID="ocr-unavailable" style={styles.resultHint}>{ocrResult.nutritionError ?? '영양정보를 정리하지 못했습니다. 최신 앱인지 확인한 뒤 다시 시도해 주세요.'}</Text>
                   )}
                 </View>
               )}
             </View>
           )}
 
-          <View style={styles.actions}>
+          {ocrResult?.nutrition == null && <View style={styles.actions}>
             {methods.map((method, index) => {
               const primary = index === 0 && !photo;
               return (
@@ -260,7 +254,7 @@ export function NutritionRegistrationScreen({ onBack }: { onBack: () => void }) 
                 </Pressable>
               );
             })}
-          </View>
+          </View>}
         </View>
       </ScrollView>
 

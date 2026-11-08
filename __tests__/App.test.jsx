@@ -231,20 +231,31 @@ test('structured nutrition allows edits, keeps missing values empty, and clears 
   expect(byId('nutrition-value-A002').props.value).toBe('550');
   expect(byId('nutrition-value-A008').props.value).toBe('');
   expect(byId('nutrition-value-A009').props.value).toBe('');
+  expect(renderer.root.findAllByProps({ accessibilityLabel: '총 내용량당' })).toHaveLength(0);
+  await act(async () => { byId('nutrition-edit-basis').props.onPress(); });
+  await act(async () => { byId('nutrition-basis-text').props.onChangeText('100 g당'); });
+  await act(async () => { byId('nutrition-basis-apply').props.onPress(); });
+  expect(byId('nutrition-basis-summary').props.children).toEqual(['영양정보 기준: ', '100 g당']);
+  expect(byId('nutrition-value-A002').props.value).toBe('550');
+  await act(async () => { byId('register-nutrition').props.onPress(); });
+  expect(byId('nutrition-register-notice')).toBeDefined();
+  expect(renderer.root.findAllByProps({ visible: true }).length).toBeGreaterThan(0);
+  await act(async () => { byId('nutrition-register-close').props.onPress(); });
+
   await act(async () => { byId('nutrition-value-A002').props.onChangeText('560'); });
   expect(byId('nutrition-value-A002').props.value).toBe('560');
   await act(async () => { byId('nutrition-value-A002').props.onChangeText('56%'); });
   expect(byId('nutrition-value-A002').props.value).toBe('560');
-  expect(byId('ocr-text').props.children).toBe('나트륨 550 mg');
+  expect(byId('ocr-text')).toBeUndefined();
   await act(async () => { byId('remove-nutrition-photo').props.onPress(); });
   expect(byId('nutrition-review')).toBeUndefined();
 });
 
-test('OCR reads the selected photo and shows its raw text without inventing fields', async () => {
+test('OCR reads the photo without exposing its raw text', async () => {
   await selectOcrPhoto();
   await act(async () => { byId('read-nutrition-text').props.onPress(); });
   expect(recognizeNutritionText).toHaveBeenCalledWith(sampleAsset.uri);
-  expect(byId('ocr-text').props.children).toBe('나트륨 350mg\n탄수화물 20g');
+  expect(byId('ocr-text')).toBeUndefined();
   expect(byId('read-nutrition-text').props.disabled).toBe(false);
 });
 
@@ -265,7 +276,7 @@ test('OCR failure and missing native module can be dismissed and retried', async
   expect(byId('read-nutrition-text').props.disabled).toBe(false);
   await act(async () => { byId('registration-notice-close').props.onPress(); });
   await act(async () => { byId('read-nutrition-text').props.onPress(); });
-  expect(byId('ocr-text').props.children).toBe('단백질 5g');
+  expect(byId('ocr-text')).toBeUndefined();
 });
 
 test('repeated OCR presses launch one request', async () => {
@@ -279,7 +290,7 @@ test('repeated OCR presses launch one request', async () => {
   expect(recognizeNutritionText).toHaveBeenCalledTimes(1);
   expect(byId('read-nutrition-text').props.disabled).toBe(true);
   await act(async () => { finish({ text: '나트륨 350mg', lines: [], languages: ['ko-KR'] }); });
-  expect(byId('ocr-text')).toBeDefined();
+  expect(byId('ocr-result')).toBeDefined();
 });
 
 test.each(['replace', 'remove'])('old OCR replies are ignored after photo %s', async (action) => {
