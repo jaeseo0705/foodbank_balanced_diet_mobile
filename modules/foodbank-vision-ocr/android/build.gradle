@@ -1,0 +1,13 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+group = 'expo.modules.foodbankocr'
+version = '1.0.0'
+android {
+  namespace 'expo.modules.foodbankocr'
+  defaultConfig { minSdkVersion 23 }
+}
+dependencies {
+  implementation 'com.google.mlkit:text-recognition-korean:16.0.1'
+}

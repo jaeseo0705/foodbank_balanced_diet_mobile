@@ -1,10 +1,5 @@
 {
-  "platforms": [
-    "apple"
-  ],
-  "apple": {
-    "modules": [
-      "FoodbankVisionOCRModule"
-    ]
-  }
+  "platforms": ["apple", "android"],
+  "apple": { "modules": ["FoodbankVisionOCRModule"] },
+  "android": { "modules": ["expo.modules.foodbankocr.FoodbankVisionOCRModule"] }
 }

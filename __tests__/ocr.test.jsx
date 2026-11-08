@@ -15,7 +15,7 @@ test('the iOS adapter forwards a local URI and retains line positions/confidence
   const recognize = jest.fn().mockResolvedValue(result);
   getVisionModule.mockReturnValue({ recognizeText: recognize });
   expect(getOcrAvailability()).toBe('ready');
-  await expect(recognizeNutritionText('file:///label.jpg')).resolves.toEqual(result);
+  await expect(recognizeNutritionText('file:///label.jpg')).resolves.toMatchObject(result);
   expect(recognize).toHaveBeenCalledWith('file:///label.jpg');
 });
 

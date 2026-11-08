@@ -127,3 +127,12 @@ npx expo run:ios --device
 - Device Hub에서 숫자 키가 스크린샷 등으로 동작하면 Device Hub의 키보드 캡처 상태를 확인합니다. 앱의 숫자 입력 처리와 별개인 맥 키 전달 설정입니다.
 
 FMS 연동은 추후 작업이며, 현재 입력 시험이나 등록 전 검증에 FMS 식품 선택을 요구하지 않습니다.
+
+
+### iOS / Android 공통 OCR 처리
+- iOS는 Apple Vision, Android는 ML Kit Text Recognition v2 한국어 모델을 사용합니다. Android 한국어 모델은 앱에 포함하여 별도 모델 다운로드 없이 사용할 수 있게 구성했습니다.
+- 두 엔진은 원본 텍스트와 좌상단 원점의 정규화된 위치 정보를 반환합니다. `src/lib/nutritionParser.ts`가 양쪽에서 동일한 JSON 사전과 영양성분 정리 규칙을 적용합니다.
+- 기존 Swift 파서 파일은 이전 구현과 비교·참조할 수 있도록 보관하지만, 앱의 영양성분 정리는 공통 TypeScript 코드에서 실행합니다.
+- 새 Android 네이티브 모듈을 사용하려면 `npm install` 후 Android 개발 환경에서 `npx expo run:android`로 빌드해야 합니다. Expo Go에는 이 모듈이 포함되어 있지 않습니다.
+- iOS 네이티브 모듈 변경을 적용하려면 `npx expo run:ios --device`로 다시 빌드합니다.
+- 양쪽 엔진의 실제 사진 인식 정확도·회전 사진 처리 및 Swift 이전 결과와의 비교 시험은 추후 진행합니다. 이번 변경으로 정확도 동등성을 보장하는 것은 아닙니다.
