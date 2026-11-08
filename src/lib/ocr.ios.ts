@@ -12,7 +12,11 @@ export async function recognizeNutritionText(uri: string): Promise<OcrResult> {
   if (!uri.startsWith('file://')) throw new OcrError('invalid-image', '사진을 다시 선택해 주세요.');
   try {
     const result = await module.recognizeText(uri);
-    return { ...result, nutrition: parseNutrition(result.lines, result.text), nutritionError: undefined };
+    try {
+      return { ...result, nutrition: parseNutrition(result.lines, result.text), nutritionError: undefined };
+    } catch {
+      return { ...result, nutrition: undefined, nutritionError: '영양정보를 정리하지 못했습니다. 사진을 다시 선택하거나 직접 입력해 주세요.' };
+    }
   } catch {
     throw new OcrError('recognition-failed', '사진의 글자를 읽지 못했습니다. 선명한 영양성분표 사진으로 다시 시도해 주세요.');
   }
