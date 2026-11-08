@@ -16,6 +16,7 @@ output = pathlib.Path("qa-output")
 output.mkdir(exist_ok=True)
 products = pathlib.Path("/tmp/foodbank-ios-build/Build/Products/Debug-iphonesimulator")
 app = next(products.glob("*.app"))
+assert (app / "FoodbankNutritionRules.bundle" / "korean_nutrition_rules_v1.json").is_file(), "Nutrition dictionary must be packaged in the app"
 with (app / "Info.plist").open("rb") as stream:
     identifier = plistlib.load(stream)["CFBundleIdentifier"]
 

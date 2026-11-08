@@ -3,6 +3,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { ActivityIndicator, BackHandler, Image, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { NutritionReview } from '../components/NutritionReview';
 import { BackIcon } from '../components/TaskIcons';
 import { RegistrationActionIcon, RegistrationArtwork, type RegistrationMethod } from '../components/RegistrationArtwork';
 import { colors } from '../theme';
@@ -153,6 +154,8 @@ export function NutritionRegistrationScreen({ onBack }: { onBack: () => void }) 
       <ScrollView
         testID="nutrition-registration-screen"
         contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.content, { width: contentWidth, paddingTop: Math.max(24, Math.min(54, availableHeight * 0.06)) }]}>
@@ -209,6 +212,10 @@ export function NutritionRegistrationScreen({ onBack }: { onBack: () => void }) 
                 {ocrBusy && <ActivityIndicator color={colors.background} />}
                 <Text style={styles.readButtonText}>{ocrBusy ? '영양정보 읽는 중…' : '영양정보 읽기'}</Text>
               </Pressable>
+              {ocrResult?.nutrition && <NutritionReview key={ocrToken.current} result={ocrResult.nutrition} />}
+              {ocrResult !== null && !ocrResult.nutrition && ocrResult.text.trim() !== '' && (
+                <Text style={styles.resultHint}>{ocrResult.nutritionError ?? '성분별 정리를 사용하려면 최신 코드로 앱을 다시 빌드해 주세요.'}</Text>
+              )}
               {ocrResult !== null && (
                 <View testID="ocr-result" style={styles.resultCard}>
                   <Text accessibilityRole="header" style={styles.resultTitle}>인식한 글자</Text>

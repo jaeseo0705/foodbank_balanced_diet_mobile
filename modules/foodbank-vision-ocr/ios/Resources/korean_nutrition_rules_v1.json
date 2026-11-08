@@ -1,0 +1,2407 @@
+{
+ "version": "1.3.0",
+ "fuzzy_policy": {
+  "min_jamo_length": 7,
+  "max_distance_ratio": 0.2,
+  "max_distance": 3,
+  "min_margin_to_second_best": 2,
+  "require_identical_digits_and_latin": true
+ },
+ "plausibility": {
+  "physical_limits_per_100": {
+   "A001": 900,
+   "A002": 39340
+  },
+  "max_density_g_per_ml": 1.5,
+  "energy_kcal_per_g": {
+   "A003": 4,
+   "A009": 4,
+   "A005": 9
+  },
+  "carbohydrate_components_kcal_per_g": {
+   "D005": 2,
+   "D006": 0,
+   "D007": 0
+  },
+  "energy_tolerance_kcal": 20,
+  "energy_tolerance_ratio": 0.2,
+  "typical_max_source": "가공식품 DB 2026-10-29, 100 g(mL)당 상위 0.1%"
+ },
+ "ambiguous_terms": [
+  {
+   "key": "도코사펜타에노산",
+   "codes_in_dictionary": [
+    "E007"
+   ],
+   "codes_outside_dictionary": [
+    "E10614"
+   ]
+  },
+  {
+   "key": "디호모리놀렌산",
+   "codes_in_dictionary": [
+    "E009"
+   ],
+   "codes_outside_dictionary": [
+    "E10606"
+   ]
+  },
+  {
+   "key": "피리독신",
+   "codes_in_dictionary": [
+    "B007"
+   ],
+   "codes_outside_dictionary": [
+    "C20610"
+   ]
+  }
+ ],
+ "nutrients": [
+  {
+   "code": "A001",
+   "name_ko": "열량",
+   "unit": "kcal",
+   "unit_qualifier": null,
+   "is_core": true,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "열량",
+     "key": "열량",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "에너지",
+     "key": "에너지",
+     "source": "kfind_2026"
+    },
+    {
+     "text": "칼로리",
+     "key": "칼로리",
+     "source": "curated_variant"
+    }
+   ],
+   "typical_max_per_100": 900.0
+  },
+  {
+   "code": "A002",
+   "name_ko": "나트륨",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": true,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "나트륨",
+     "key": "나트륨",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 15929.0
+  },
+  {
+   "code": "A003",
+   "name_ko": "탄수화물",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": true,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "탄수화물",
+     "key": "탄수화물",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 100.0
+  },
+  {
+   "code": "A004",
+   "name_ko": "당류",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": true,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "당류",
+     "key": "당류",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 99.5
+  },
+  {
+   "code": "A005",
+   "name_ko": "지방",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": true,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "지방",
+     "key": "지방",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 100.0
+  },
+  {
+   "code": "A006",
+   "name_ko": "트랜스지방",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": true,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "트랜스지방",
+     "key": "트랜스지방",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "트랜스지방산",
+     "key": "트랜스지방산",
+     "source": "kfind_2026"
+    }
+   ],
+   "typical_max_per_100": 4.12
+  },
+  {
+   "code": "A007",
+   "name_ko": "포화지방",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": true,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "포화지방",
+     "key": "포화지방",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "포화지방산",
+     "key": "포화지방산",
+     "source": "kfind_2026"
+    }
+   ],
+   "typical_max_per_100": 42.86
+  },
+  {
+   "code": "A008",
+   "name_ko": "콜레스테롤",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": true,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "콜레스테롤",
+     "key": "콜레스테롤",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 467.5
+  },
+  {
+   "code": "A009",
+   "name_ko": "단백질",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": true,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "단백질",
+     "key": "단백질",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 76.6
+  },
+  {
+   "code": "B001",
+   "name_ko": "니아신",
+   "unit": "mg",
+   "unit_qualifier": "NE",
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "니아신",
+     "key": "니아신",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "나이아신",
+     "key": "나이아신",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 3874.79
+  },
+  {
+   "code": "B002",
+   "name_ko": "니코틴산",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "니코틴산",
+     "key": "니코틴산",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "B003",
+   "name_ko": "니코틴아마이드",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "니코틴아마이드",
+     "key": "니코틴아마이드",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "B004",
+   "name_ko": "비오틴",
+   "unit": "μg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "비오틴",
+     "key": "비오틴",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "바이오틴",
+     "key": "바이오틴",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 1318040.72
+  },
+  {
+   "code": "B005",
+   "name_ko": "비타민 B1",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "비타민 B1",
+     "key": "비타민b1",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "티아민",
+     "key": "티아민",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 15740.0
+  },
+  {
+   "code": "B006",
+   "name_ko": "비타민 B2",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "비타민 B2",
+     "key": "비타민b2",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "리보플라빈",
+     "key": "리보플라빈",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 500.0
+  },
+  {
+   "code": "B007",
+   "name_ko": "비타민 B6",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "비타민 B6",
+     "key": "비타민b6",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 1245.555
+  },
+  {
+   "code": "B008",
+   "name_ko": "비타민 B12",
+   "unit": "μg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "비타민 B12",
+     "key": "비타민b12",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 7154.97
+  },
+  {
+   "code": "B009",
+   "name_ko": "비타민 C",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "비타민 C",
+     "key": "비타민c",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "아스코르빈산",
+     "key": "아스코르빈산",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 99950.0
+  },
+  {
+   "code": "B010",
+   "name_ko": "엽산",
+   "unit": "μg",
+   "unit_qualifier": "DFE",
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "엽산",
+     "key": "엽산",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 110473.64
+  },
+  {
+   "code": "B011",
+   "name_ko": "콜린",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "콜린",
+     "key": "콜린",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "B012",
+   "name_ko": "판토텐산",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "판토텐산",
+     "key": "판토텐산",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 3461.544
+  },
+  {
+   "code": "C001",
+   "name_ko": "비타민 A",
+   "unit": "μg",
+   "unit_qualifier": "RAE",
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "비타민 A",
+     "key": "비타민a",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 100295.0
+  },
+  {
+   "code": "C002",
+   "name_ko": "레티놀",
+   "unit": "μg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "레티놀",
+     "key": "레티놀",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 2469.0
+  },
+  {
+   "code": "C003",
+   "name_ko": "베타카로틴",
+   "unit": "μg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "베타카로틴",
+     "key": "베타카로틴",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 9303.0
+  },
+  {
+   "code": "C004",
+   "name_ko": "비타민 D",
+   "unit": "μg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "비타민 D",
+     "key": "비타민d",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 4808.0
+  },
+  {
+   "code": "C005",
+   "name_ko": "비타민 D2",
+   "unit": "μg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "비타민 D2",
+     "key": "비타민d2",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "C006",
+   "name_ko": "비타민 D3",
+   "unit": "μg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "비타민 D3",
+     "key": "비타민d3",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "C007",
+   "name_ko": "비타민 E",
+   "unit": "mg",
+   "unit_qualifier": "α-TE",
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "비타민 E",
+     "key": "비타민e",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 2984.12
+  },
+  {
+   "code": "C008",
+   "name_ko": "알파 토코페롤",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "알파 토코페롤",
+     "key": "알파토코페롤",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "C009",
+   "name_ko": "베타 토코페롤",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "베타 토코페롤",
+     "key": "베타토코페롤",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "C010",
+   "name_ko": "감마 토코페롤",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "감마 토코페롤",
+     "key": "감마토코페롤",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "C011",
+   "name_ko": "델타 토코페롤",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "델타 토코페롤",
+     "key": "델타토코페롤",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "C012",
+   "name_ko": "알파 토코트리에놀",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "알파 토코트리에놀",
+     "key": "알파토코트리에놀",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "C013",
+   "name_ko": "베타 토코트리에놀",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "베타 토코트리에놀",
+     "key": "베타토코트리에놀",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "C014",
+   "name_ko": "감마 토코트리에놀",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "감마 토코트리에놀",
+     "key": "감마토코트리에놀",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "C015",
+   "name_ko": "델타 토코트리에놀",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "델타 토코트리에놀",
+     "key": "델타토코트리에놀",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "C016",
+   "name_ko": "비타민 K",
+   "unit": "μg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "비타민 K",
+     "key": "비타민k",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "C017",
+   "name_ko": "비타민 K1",
+   "unit": "μg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "비타민 K1",
+     "key": "비타민k1",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "C018",
+   "name_ko": "비타민 K2",
+   "unit": "μg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "비타민 K2",
+     "key": "비타민k2",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "D001",
+   "name_ko": "갈락토오스",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "갈락토오스",
+     "key": "갈락토오스",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "D002",
+   "name_ko": "과당",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "과당",
+     "key": "과당",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "D003",
+   "name_ko": "당알콜",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "당알콜",
+     "key": "당알콜",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "당알코올",
+     "key": "당알코올",
+     "source": "curated_variant"
+    }
+   ]
+  },
+  {
+   "code": "D004",
+   "name_ko": "맥아당",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "맥아당",
+     "key": "맥아당",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "D005",
+   "name_ko": "식이섬유",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "식이섬유",
+     "key": "식이섬유",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 70.0
+  },
+  {
+   "code": "D006",
+   "name_ko": "알룰로오스",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "알룰로오스",
+     "key": "알룰로오스",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "알룰로스",
+     "key": "알룰로스",
+     "source": "curated_variant"
+    }
+   ],
+   "typical_max_per_100": 99.8
+  },
+  {
+   "code": "D007",
+   "name_ko": "에리스리톨",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "에리스리톨",
+     "key": "에리스리톨",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "D008",
+   "name_ko": "유당",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "유당",
+     "key": "유당",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "D009",
+   "name_ko": "자당",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "자당",
+     "key": "자당",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "D010",
+   "name_ko": "타가토스",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "타가토스",
+     "key": "타가토스",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "D011",
+   "name_ko": "포도당",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "포도당",
+     "key": "포도당",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "E001",
+   "name_ko": "불포화지방",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "불포화지방",
+     "key": "불포화지방",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "불포화지방산",
+     "key": "불포화지방산",
+     "source": "kfind_2026"
+    }
+   ]
+  },
+  {
+   "code": "E002",
+   "name_ko": "EPA + DHA",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "EPA + DHA",
+     "key": "epa+dha",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "EPA와 DHA의 합",
+     "key": "epa와dha의합",
+     "source": "pfdb_xlsx_2026_column"
+    }
+   ]
+  },
+  {
+   "code": "E003",
+   "name_ko": "가돌레산(20:1 n-11)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "가돌레산(20:1 n-11)",
+     "key": "가돌레산(20:1n11)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "가돌레산",
+     "key": "가돌레산",
+     "source": "derived_without_lipid_notation"
+    },
+    {
+     "text": "에이코센산(20:1 n-9)",
+     "key": "에이코센산(20:1n9)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "에이코센산",
+     "key": "에이코센산",
+     "source": "derived_without_lipid_notation"
+    },
+    {
+     "text": "가돌레산(20:1)",
+     "key": "가돌레산(20:1)",
+     "source": "pfdb_xlsx_2026_column"
+    },
+    {
+     "text": "에이코센산(20:1)",
+     "key": "에이코센산(20:1)",
+     "source": "pfdb_xlsx_2026_column"
+    }
+   ]
+  },
+  {
+   "code": "E004",
+   "name_ko": "감마 리놀렌산(18:3 n-6)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "감마 리놀렌산(18:3 n-6)",
+     "key": "감마리놀렌산(18:3n6)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "감마 리놀렌산",
+     "key": "감마리놀렌산",
+     "source": "derived_without_lipid_notation"
+    },
+    {
+     "text": "감마 리놀렌산(18:3(n-6))",
+     "key": "감마리놀렌산(18:3(n6))",
+     "source": "pfdb_xlsx_2026_column"
+    }
+   ]
+  },
+  {
+   "code": "E005",
+   "name_ko": "네르본산(24:1)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "네르본산(24:1)",
+     "key": "네르본산(24:1)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "네르본산",
+     "key": "네르본산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E006",
+   "name_ko": "도코사디에노산(22:2)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "도코사디에노산(22:2)",
+     "key": "도코사디에노산(22:2)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "도코사디에노산",
+     "key": "도코사디에노산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E007",
+   "name_ko": "도코사펜타에노산(DPA, 22:5 n-3)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "도코사펜타에노산(DPA, 22:5 n-3)",
+     "key": "도코사펜타에노산(dpa,22:5n3)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "토코사펜타엔산(22:5(n-3))",
+     "key": "토코사펜타엔산(22:5(n3))",
+     "source": "pfdb_xlsx_2026_column"
+    }
+   ]
+  },
+  {
+   "code": "E008",
+   "name_ko": "도코사헥사에노산 (DHA, 22:6 n-3)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "도코사헥사에노산 (DHA, 22:6 n-3)",
+     "key": "도코사헥사에노산(dha,22:6n3)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "도코사헥사에노산",
+     "key": "도코사헥사에노산",
+     "source": "derived_without_lipid_notation"
+    },
+    {
+     "text": "DHA",
+     "key": "dha",
+     "source": "pfdb_xlsx_2026_column"
+    },
+    {
+     "text": "도코사헥사엔산(22:6(n-3))",
+     "key": "도코사헥사엔산(22:6(n3))",
+     "source": "pfdb_xlsx_2026_column"
+    }
+   ]
+  },
+  {
+   "code": "E009",
+   "name_ko": "디호모리놀렌산(20:3 n-3)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "디호모리놀렌산(20:3 n-3)",
+     "key": "디호모리놀렌산(20:3n3)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "에이코사트리에노산(20:3(n-3))",
+     "key": "에이코사트리에노산(20:3(n3))",
+     "source": "pfdb_xlsx_2026_column"
+    }
+   ]
+  },
+  {
+   "code": "E010",
+   "name_ko": "라우르산(12:0)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "라우르산(12:0)",
+     "key": "라우르산(12:0)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "라우르산",
+     "key": "라우르산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E011",
+   "name_ko": "리그노세르산(24:0)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "리그노세르산(24:0)",
+     "key": "리그노세르산(24:0)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "리그노세르산",
+     "key": "리그노세르산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E012",
+   "name_ko": "리놀레산(18:2 n-6)",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "리놀레산(18:2 n-6)",
+     "key": "리놀레산(18:2n6)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "리놀레산",
+     "key": "리놀레산",
+     "source": "derived_without_lipid_notation"
+    },
+    {
+     "text": "리놀레산(18:2(n-6))",
+     "key": "리놀레산(18:2(n6))",
+     "source": "pfdb_xlsx_2026_column"
+    }
+   ]
+  },
+  {
+   "code": "E013",
+   "name_ko": "미리스톨레산(14:1)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "미리스톨레산(14:1)",
+     "key": "미리스톨레산(14:1)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "미리스톨레산",
+     "key": "미리스톨레산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E014",
+   "name_ko": "미리스트산(14:0)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "미리스트산(14:0)",
+     "key": "미리스트산(14:0)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "미리스트산",
+     "key": "미리스트산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E015",
+   "name_ko": "박센산(18:1 n-7)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "박센산(18:1 n-7)",
+     "key": "박센산(18:1n7)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "박센산",
+     "key": "박센산",
+     "source": "derived_without_lipid_notation"
+    },
+    {
+     "text": "박센산(18:1(n-7))",
+     "key": "박센산(18:1(n7))",
+     "source": "pfdb_xlsx_2026_column"
+    }
+   ]
+  },
+  {
+   "code": "E016",
+   "name_ko": "베헨산(22:0)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "베헨산(22:0)",
+     "key": "베헨산(22:0)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "베헨산",
+     "key": "베헨산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E017",
+   "name_ko": "부티르산(4:0)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "부티르산(4:0)",
+     "key": "부티르산(4:0)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "부티르산",
+     "key": "부티르산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E018",
+   "name_ko": "스테아르산(18:0)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "스테아르산(18:0)",
+     "key": "스테아르산(18:0)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "스테아르산",
+     "key": "스테아르산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E019",
+   "name_ko": "스테아리돈산(18:4 n-3)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "스테아리돈산(18:4 n-3)",
+     "key": "스테아리돈산(18:4n3)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "스테아리돈산",
+     "key": "스테아리돈산",
+     "source": "derived_without_lipid_notation"
+    },
+    {
+     "text": "스테아리돈산(18:4)",
+     "key": "스테아리돈산(18:4)",
+     "source": "kfind_2026"
+    },
+    {
+     "text": "스테아리돈산(18:4(n-3))",
+     "key": "스테아리돈산(18:4(n3))",
+     "source": "pfdb_xlsx_2026_column"
+    }
+   ]
+  },
+  {
+   "code": "E020",
+   "name_ko": "아라키돈산(20:4 n-6)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "아라키돈산(20:4 n-6)",
+     "key": "아라키돈산(20:4n6)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "아라키돈산",
+     "key": "아라키돈산",
+     "source": "derived_without_lipid_notation"
+    },
+    {
+     "text": "아라키돈산(20:4(n-6))",
+     "key": "아라키돈산(20:4(n6))",
+     "source": "pfdb_xlsx_2026_column"
+    }
+   ]
+  },
+  {
+   "code": "E021",
+   "name_ko": "아라키드산(20:0)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "아라키드산(20:0)",
+     "key": "아라키드산(20:0)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "아라키드산",
+     "key": "아라키드산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E022",
+   "name_ko": "알파리놀렌산(18:3 n-3)",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "알파리놀렌산(18:3 n-3)",
+     "key": "알파리놀렌산(18:3n3)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "알파리놀렌산",
+     "key": "알파리놀렌산",
+     "source": "derived_without_lipid_notation"
+    },
+    {
+     "text": "알파 리놀렌산(18:3(n-3))",
+     "key": "알파리놀렌산(18:3(n3))",
+     "source": "pfdb_xlsx_2026_column"
+    }
+   ]
+  },
+  {
+   "code": "E023",
+   "name_ko": "에루크산(22:1)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "에루크산(22:1)",
+     "key": "에루크산(22:1)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "에루크산",
+     "key": "에루크산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E024",
+   "name_ko": "에이코사디에노산(20:2 n-6)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "에이코사디에노산(20:2 n-6)",
+     "key": "에이코사디에노산(20:2n6)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "에이코사디에노산",
+     "key": "에이코사디에노산",
+     "source": "derived_without_lipid_notation"
+    },
+    {
+     "text": "에이코사디에노산(20:2(n-6))",
+     "key": "에이코사디에노산(20:2(n6))",
+     "source": "pfdb_xlsx_2026_column"
+    }
+   ]
+  },
+  {
+   "code": "E025",
+   "name_ko": "에이코사트리에노산(20:3 n-6)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "에이코사트리에노산(20:3 n-6)",
+     "key": "에이코사트리에노산(20:3n6)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "에이코사트리에노산",
+     "key": "에이코사트리에노산",
+     "source": "derived_without_lipid_notation"
+    },
+    {
+     "text": "에이코사트리에노산(20:3(n-6))",
+     "key": "에이코사트리에노산(20:3(n6))",
+     "source": "pfdb_xlsx_2026_column"
+    }
+   ]
+  },
+  {
+   "code": "E026",
+   "name_ko": "에이코사펜타에노산 (EPA, 20:5 n-3)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "에이코사펜타에노산 (EPA, 20:5 n-3)",
+     "key": "에이코사펜타에노산(epa,20:5n3)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "에이코사펜타에노산",
+     "key": "에이코사펜타에노산",
+     "source": "derived_without_lipid_notation"
+    },
+    {
+     "text": "EPA",
+     "key": "epa",
+     "source": "pfdb_xlsx_2026_column"
+    },
+    {
+     "text": "에이코사펜타에노산(20:5(n-3))",
+     "key": "에이코사펜타에노산(20:5(n3))",
+     "source": "pfdb_xlsx_2026_column"
+    }
+   ]
+  },
+  {
+   "code": "E027",
+   "name_ko": "오메가3 지방산",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "오메가3 지방산",
+     "key": "오메가3지방산",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "E028",
+   "name_ko": "오메가6 지방산",
+   "unit": "g",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "오메가6 지방산",
+     "key": "오메가6지방산",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "E029",
+   "name_ko": "올레산(18:1 n-9)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "올레산(18:1 n-9)",
+     "key": "올레산(18:1n9)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "올레산",
+     "key": "올레산",
+     "source": "derived_without_lipid_notation"
+    },
+    {
+     "text": "올레산(18:1(n-9))",
+     "key": "올레산(18:1(n9))",
+     "source": "pfdb_xlsx_2026_column"
+    }
+   ]
+  },
+  {
+   "code": "E030",
+   "name_ko": "카프로산(6:0)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "카프로산(6:0)",
+     "key": "카프로산(6:0)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "카프로산",
+     "key": "카프로산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E031",
+   "name_ko": "카프르산(10:0)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "카프르산(10:0)",
+     "key": "카프르산(10:0)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "카프르산",
+     "key": "카프르산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E032",
+   "name_ko": "카프릴산(8:0)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "카프릴산(8:0)",
+     "key": "카프릴산(8:0)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "카프릴산",
+     "key": "카프릴산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E033",
+   "name_ko": "트라이데칸산(13:0)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "트라이데칸산(13:0)",
+     "key": "트라이데칸산(13:0)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "트라이데칸산",
+     "key": "트라이데칸산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E034",
+   "name_ko": "트랜스 리놀레산(18:2t)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "트랜스 리놀레산(18:2t)",
+     "key": "트랜스리놀레산(18:2t)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "트랜스 리놀레산",
+     "key": "트랜스리놀레산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E035",
+   "name_ko": "트랜스 리놀렌산(18:3t)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "트랜스 리놀렌산(18:3t)",
+     "key": "트랜스리놀렌산(18:3t)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "트랜스 리놀렌산",
+     "key": "트랜스리놀렌산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E036",
+   "name_ko": "트랜스 올레산(18:1 trans n-9)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "트랜스 올레산(18:1 trans n-9)",
+     "key": "트랜스올레산(18:1transn9)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "트랜스 올레산",
+     "key": "트랜스올레산",
+     "source": "derived_without_lipid_notation"
+    },
+    {
+     "text": "트랜스 올레산(18:1(n-9t)",
+     "key": "트랜스올레산(18:1(n9t)",
+     "source": "pfdb_xlsx_2026_column"
+    }
+   ]
+  },
+  {
+   "code": "E037",
+   "name_ko": "트리코산산(23:0)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "트리코산산(23:0)",
+     "key": "트리코산산(23:0)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "트리코산산",
+     "key": "트리코산산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E038",
+   "name_ko": "팔미톨레산(16:1)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "팔미톨레산(16:1)",
+     "key": "팔미톨레산(16:1)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "팔미톨레산",
+     "key": "팔미톨레산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E039",
+   "name_ko": "팔미트산(16:0)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "팔미트산(16:0)",
+     "key": "팔미트산(16:0)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "팔미트산",
+     "key": "팔미트산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E040",
+   "name_ko": "펜타데칸산(15:0)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "펜타데칸산(15:0)",
+     "key": "펜타데칸산(15:0)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "펜타데칸산",
+     "key": "펜타데칸산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E041",
+   "name_ko": "헨에이코산산(21:0)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "헨에이코산산(21:0)",
+     "key": "헨에이코산산(21:0)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "헨에이코산산",
+     "key": "헨에이코산산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E042",
+   "name_ko": "헵타데센산(17:1)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "헵타데센산(17:1)",
+     "key": "헵타데센산(17:1)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "헵타데센산",
+     "key": "헵타데센산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "E043",
+   "name_ko": "헵타데칸산(17:0)",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": false,
+   "aliases": [
+    {
+     "text": "헵타데칸산(17:0)",
+     "key": "헵타데칸산(17:0)",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "헵타데칸산",
+     "key": "헵타데칸산",
+     "source": "derived_without_lipid_notation"
+    }
+   ]
+  },
+  {
+   "code": "F001",
+   "name_ko": "구리",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "구리",
+     "key": "구리",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "F002",
+   "name_ko": "마그네슘",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "마그네슘",
+     "key": "마그네슘",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 17918.04
+  },
+  {
+   "code": "F003",
+   "name_ko": "망간",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "망간",
+     "key": "망간",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "F004",
+   "name_ko": "몰리브덴",
+   "unit": "μg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "몰리브덴",
+     "key": "몰리브덴",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "F005",
+   "name_ko": "불소",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "불소",
+     "key": "불소",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "F006",
+   "name_ko": "셀레늄",
+   "unit": "μg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "셀레늄",
+     "key": "셀레늄",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "셀렌",
+     "key": "셀렌",
+     "source": "curated_variant"
+    }
+   ]
+  },
+  {
+   "code": "F007",
+   "name_ko": "아연",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "아연",
+     "key": "아연",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 1564.61
+  },
+  {
+   "code": "F008",
+   "name_ko": "염소",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "염소",
+     "key": "염소",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "F009",
+   "name_ko": "요오드",
+   "unit": "μg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "요오드",
+     "key": "요오드",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "F010",
+   "name_ko": "인",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "인",
+     "key": "인",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 1232.0
+  },
+  {
+   "code": "F011",
+   "name_ko": "철",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "철",
+     "key": "철",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "철분",
+     "key": "철분",
+     "source": "curated_variant"
+    }
+   ],
+   "typical_max_per_100": 190.48
+  },
+  {
+   "code": "F012",
+   "name_ko": "칼륨",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "칼륨",
+     "key": "칼륨",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 10770.0
+  },
+  {
+   "code": "F013",
+   "name_ko": "칼슘",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "칼슘",
+     "key": "칼슘",
+     "source": "mfds_2023"
+    }
+   ],
+   "typical_max_per_100": 5250.0
+  },
+  {
+   "code": "F014",
+   "name_ko": "크롬",
+   "unit": "μg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "크롬",
+     "key": "크롬",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G001",
+   "name_ko": "아미노산",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "아미노산",
+     "key": "아미노산",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G002",
+   "name_ko": "필수아미노산",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "필수아미노산",
+     "key": "필수아미노산",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G003",
+   "name_ko": "비필수아미노산",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "비필수아미노산",
+     "key": "비필수아미노산",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G004",
+   "name_ko": "글루탐산",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "글루탐산",
+     "key": "글루탐산",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G005",
+   "name_ko": "글리신",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "글리신",
+     "key": "글리신",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "글라이신",
+     "key": "글라이신",
+     "source": "pfdb_xlsx_2026_column"
+    }
+   ]
+  },
+  {
+   "code": "G006",
+   "name_ko": "라이신",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "라이신",
+     "key": "라이신",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G007",
+   "name_ko": "류신",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "류신",
+     "key": "류신",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "루신",
+     "key": "루신",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G008",
+   "name_ko": "메티오닌",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "메티오닌",
+     "key": "메티오닌",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G009",
+   "name_ko": "발린",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "발린",
+     "key": "발린",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G010",
+   "name_ko": "세린",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "세린",
+     "key": "세린",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G011",
+   "name_ko": "시스테인",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "시스테인",
+     "key": "시스테인",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G012",
+   "name_ko": "아르기닌",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "아르기닌",
+     "key": "아르기닌",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G013",
+   "name_ko": "아스파르트산",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "아스파르트산",
+     "key": "아스파르트산",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G014",
+   "name_ko": "알라닌",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "알라닌",
+     "key": "알라닌",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G015",
+   "name_ko": "이소류신",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "이소류신",
+     "key": "이소류신",
+     "source": "mfds_2023"
+    },
+    {
+     "text": "이소루신",
+     "key": "이소루신",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G016",
+   "name_ko": "타우린",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "타우린",
+     "key": "타우린",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G017",
+   "name_ko": "트레오닌",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "트레오닌",
+     "key": "트레오닌",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G018",
+   "name_ko": "트립토판",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "트립토판",
+     "key": "트립토판",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G019",
+   "name_ko": "티로신",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "티로신",
+     "key": "티로신",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G020",
+   "name_ko": "페닐알라닌",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "페닐알라닌",
+     "key": "페닐알라닌",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G021",
+   "name_ko": "프롤린",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "프롤린",
+     "key": "프롤린",
+     "source": "mfds_2023"
+    }
+   ]
+  },
+  {
+   "code": "G022",
+   "name_ko": "히스티딘",
+   "unit": "mg",
+   "unit_qualifier": null,
+   "is_core": false,
+   "fuzzy_allowed": true,
+   "aliases": [
+    {
+     "text": "히스티딘",
+     "key": "히스티딘",
+     "source": "mfds_2023"
+    }
+   ]
+  }
+ ]
+}

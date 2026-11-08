@@ -22,11 +22,16 @@ jobs:
           node-version: 24
       - name: Select the newest installed stable Xcode
         run: python3 scripts/select-ci-xcode.py
+      - name: Compile and exercise the Korean nutrition parser
+        run: |
+          mkdir -p qa-output
+          swiftc modules/foodbank-vision-ocr/ios/NutritionScanKit.swift modules/foodbank-vision-ocr/ios/NutritionLabelService.swift scripts/nutrition-smoke/main.swift -o /tmp/foodbank-nutrition-check -framework CoreGraphics
+          /tmp/foodbank-nutrition-check
       - name: Compile and exercise the real Apple Vision engine
         run: |
           mkdir -p qa-output
           xcodebuild -version
-          swiftc modules/foodbank-vision-ocr/ios/VisionTextRecognizer.swift scripts/vision-smoke/main.swift -o /tmp/foodbank-vision-check -framework Vision -framework CoreText -framework ImageIO -framework CoreGraphics
+          swiftc modules/foodbank-vision-ocr/ios/VisionTextRecognizer.swift modules/foodbank-vision-ocr/ios/NutritionScanKit.swift modules/foodbank-vision-ocr/ios/NutritionLabelService.swift scripts/vision-smoke/main.swift -o /tmp/foodbank-vision-check -framework Vision -framework CoreText -framework ImageIO -framework CoreGraphics
           /tmp/foodbank-vision-check > qa-output/vision-smoke.log 2>&1 || { cat qa-output/vision-smoke.log; exit 1; }
           cat qa-output/vision-smoke.log
       - name: Install dependencies and verify module registration

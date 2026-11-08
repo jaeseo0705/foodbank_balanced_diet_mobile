@@ -217,6 +217,29 @@ async function selectOcrPhoto() {
   await act(async () => { byId('registration-photo').props.onPress(); });
 }
 
+test('structured nutrition allows edits, keeps missing values empty, and clears with the photo', async () => {
+  const entry = (code, name, value, state = 'exact') => ({ code, name, value, unit: 'mg', state,
+    needsReview: state !== 'exact', reviewReasons: [], notices: [], alternatives: [] });
+  recognizeNutritionText.mockResolvedValue({ text: '나트륨 550 mg', lines: [], languages: ['ko-KR'], nutrition: {
+    package: { quantity: '80', unit: 'g' },
+    basis: { type: 'total_package', quantity: '80', unit: 'g', needsReview: false, needsUnitWeight: false },
+    required: [entry('A002', '나트륨', '550'), entry('A008', '콜레스테롤', undefined, 'not_detected'), entry('A009', '단백질', '5', 'conflict')],
+    additional: [], review: { unmatched: [], ambiguous: [], conflicts: [], leftoverText: [], notes: [] },
+  } });
+  await selectOcrPhoto();
+  await act(async () => { byId('read-nutrition-text').props.onPress(); });
+  expect(byId('nutrition-value-A002').props.value).toBe('550');
+  expect(byId('nutrition-value-A008').props.value).toBe('');
+  expect(byId('nutrition-value-A009').props.value).toBe('');
+  await act(async () => { byId('nutrition-value-A002').props.onChangeText('560'); });
+  expect(byId('nutrition-value-A002').props.value).toBe('560');
+  await act(async () => { byId('nutrition-value-A002').props.onChangeText('56%'); });
+  expect(byId('nutrition-value-A002').props.value).toBe('560');
+  expect(byId('ocr-text').props.children).toBe('나트륨 550 mg');
+  await act(async () => { byId('remove-nutrition-photo').props.onPress(); });
+  expect(byId('nutrition-review')).toBeUndefined();
+});
+
 test('OCR reads the selected photo and shows its raw text without inventing fields', async () => {
   await selectOcrPhoto();
   await act(async () => { byId('read-nutrition-text').props.onPress(); });
