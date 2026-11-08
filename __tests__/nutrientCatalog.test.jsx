@@ -1,5 +1,5 @@
 import { nutrientCatalog, makeManualNutrient, searchNutrients } from '../src/lib/nutrientCatalog';
-import rules from '../modules/foodbank-vision-ocr/ios/Resources/korean_nutrition_rules_v1.json';
+import rules from '../src/data/korean_nutrition_rules_v1.json';
 
 test('picker uses the canonical parser dictionary without invented categories', () => {
   expect(nutrientCatalog.map(x => x.code).sort()).toEqual(rules.nutrients.map(x => x.code).sort());

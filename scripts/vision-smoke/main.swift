@@ -47,10 +47,6 @@ DispatchQueue.global(qos: .userInitiated).async {
         check((0...1).contains(bounds[key]!), "Coordinates must be normalized")
       }
     }
-    let dictionary = try NutrientDictionary.load(from: URL(fileURLWithPath: "modules/foodbank-vision-ocr/ios/Resources/korean_nutrition_rules_v1.json"))
-    let nutrition = try NutritionLabelService.parse(lines: lines, dictionary: dictionary)
-    let required = nutrition["required"] as! [[String: Any]]
-    check(required.first { $0["code"] as? String == "A002" }?["value"] as? String == "350", "Real Vision sodium maps to structured data")
     let data = try JSONSerialization.data(withJSONObject: result, options: [.prettyPrinted, .sortedKeys])
     try data.write(to: output.appendingPathComponent("vision-result.json"))
     do {

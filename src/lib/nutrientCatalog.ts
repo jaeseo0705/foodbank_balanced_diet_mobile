@@ -1,4 +1,4 @@
-import rules from '../../modules/foodbank-vision-ocr/ios/Resources/korean_nutrition_rules_v1.json';
+import rules from '../data/korean_nutrition_rules_v1.json';
 import type { NutritionValue } from './nutrition.types';
 
 export type NutrientOption = { code: string; name: string; unit: string; unitQualifier?: string; aliases: string[] };

@@ -1,9 +1,9 @@
-import rules from '../../modules/foodbank-vision-ocr/ios/Resources/korean_nutrition_rules_v1.json';
+import rules from '../data/korean_nutrition_rules_v1.json';
 import { nutritionRegex } from './nutritionRegex';
 import type { OcrLine } from './ocr.types';
 import type { NutritionBasis, NutritionLabelResult, NutritionValue } from './nutrition.types';
 
-// Shared port of NutritionScanKit. OCR adapters return only text and TOP-left bounds.
+// Shared Korean nutrition-label parser (ported from the removed Swift NutritionScanKit). OCR adapters return only text and TOP-left bounds.
 type Entry = typeof rules.nutrients[number];
 type Value = NutritionValue & { printedUnitQualifier?: string; match?: string; candidates?: string[] };
 type Basis = NutritionBasis & { resolution?: string; quantityFromPackage?: boolean };

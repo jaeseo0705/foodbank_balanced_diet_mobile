@@ -13,5 +13,4 @@ Pod::Spec.new do |s|
   s.dependency 'ExpoModulesCore'
   s.frameworks = 'Vision', 'ImageIO', 'CoreGraphics'
   s.source_files = '**/*.swift'
-  s.resource_bundles = { 'FoodbankNutritionRules' => ['Resources/*.json'] }
 end
