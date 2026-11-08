@@ -14,7 +14,8 @@ export async function recognizeNutritionText(uri: string): Promise<OcrResult> {
     const result = await module.recognizeText(uri);
     try {
       return { ...result, nutrition: parseNutrition(result.lines, result.text), nutritionError: undefined };
-    } catch {
+    } catch (error) {
+      if (__DEV__) console.warn('[nutrition-parser]', error);
       return { ...result, nutrition: undefined, nutritionError: '영양정보를 정리하지 못했습니다. 사진을 다시 선택하거나 직접 입력해 주세요.' };
     }
   } catch {

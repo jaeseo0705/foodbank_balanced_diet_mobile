@@ -1,4 +1,5 @@
 import rules from '../../modules/foodbank-vision-ocr/ios/Resources/korean_nutrition_rules_v1.json';
+import { nutritionRegex } from './nutritionRegex';
 import type { OcrLine } from './ocr.types';
 import type { NutritionBasis, NutritionLabelResult, NutritionValue } from './nutrition.types';
 
@@ -12,7 +13,7 @@ const normalize = (s: string) => s.normalize('NFKC').replace(/[\s·ㆍᆞ‧∙�
 const canon = (s = '') => (({ ml: 'mL', l: 'L', kj: 'kJ', 'µg': 'μg', iu: 'IU' } as Record<string, string>)[s.normalize('NFKC').toLowerCase()] ?? s.normalize('NFKC').toLowerCase());
 const dec = (s: string) => s.replace(/,/g, '');
 const num = '(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d+)?';
-const rx = (s: string, flags = 'gi') => new RegExp(s, flags);
+const rx = nutritionRegex;
 const title = /영\s*양\s*정\s*보|영\s*양\s*성\s*분\s*표?|영양\s*[·ㆍ]?\s*기능\s*정보/;
 const entries = new Map(rules.nutrients.map(e => [e.code, e]));
 const aliases = new Map(rules.nutrients.flatMap(e => e.aliases.map(a => [a.key, e] as const)));
@@ -109,7 +110,7 @@ export function parseNutrition(lines: OcrLine[], text = ''): NutritionLabelResul
     });
     row = row.replace(/1\s*일\s*영양성분|기준치에\s*대한\s*비율\s*(?:\(\s*%\s*\))?/g, ' ').replace(title, ' ').replace(/\s+/g, ' ').trim();
     if (!row) continue;
-    const tokens = [ ...Array.from(row.matchAll(rx(amount)), m => ({ m, kind: 'amount' })), ...Array.from(row.matchAll(rx(`(?<![A-Za-z0-9.:,(\\-])(?<num>${num})\\s*%`)), m => ({ m, kind: 'percent' })), ...Array.from(row.matchAll(/(?:(?<=\s)|^)(?<word>미량|없음|[-–—])(?=\s|$)/g), m => ({ m, kind: 'nonnum' })) ];
+    const tokens = [ ...Array.from(row.matchAll(rx(amount)), m => ({ m, kind: 'amount' })), ...Array.from(row.matchAll(rx(`(?<![A-Za-z0-9.:,(\\-])(?<num>${num})\\s*%`)), m => ({ m, kind: 'percent' })), ...Array.from(row.matchAll(rx('(?:(?<=\\s)|^)(?<word>미량|없음|[-–—])(?=\\s|$)', 'g')), m => ({ m, kind: 'nonnum' })) ];
     for (const m of row.matchAll(rx(`(?:(?<=\\s)|^)(?<num>${num})(?=\\s|$)`))) if (!tokens.some(t => t.m.index! <= m.index! && m.index! < t.m.index! + t.m[0].length)) tokens.push({ m, kind: 'bare' });
     tokens.sort((a, b) => a.m.index! - b.m.index!);
     if (!tokens.length && matchName(row).match !== 'unmatched') { if (pending) review.leftoverText.push(pending); pending = row; continue; }
@@ -122,7 +123,7 @@ export function parseNutrition(lines: OcrLine[], text = ''): NutritionLabelResul
       const g = m.groups!, hit = matchName(name), e = hit.entry;
       const op = ({ '<': 'lt', '≤': 'lte', '>': 'gt', '≥': 'gte', 미만: 'lt', 이하: 'lte', 초과: 'gt', 이상: 'gte' } as Record<string, Value['operator']>)[g.pre ?? g.post];
       const value: Value = { ...(e ? blank(e) : { name, needsReview: true, reviewReasons: [], notices: [], alternatives: [] }), printedName: name, value: g.num ? dec(g.num) : undefined, unit: e ? canon(e.unit) : g.unit ? canon(g.unit) : undefined, printedUnit: g.unit ? canon(g.unit) : undefined, printedUnitQualifier: g.qual, printedValue: m[0].trim(), operator: op, state: kind === 'bare' ? 'ambiguous' : kind === 'nonnum' ? g.word === '미량' ? 'trace' : g.word === '없음' ? 'none_declared' : 'dash' : op ? 'bounded' : Number(dec(g.num)) === 0 ? 'explicit_zero' : 'exact', match: hit.match, candidates: hit.candidates, needsReview: hit.match !== 'exact' || kind === 'bare', reviewReasons: [] };
-      if (!name) { if (value.printedUnit === 'kcal' || value.printedUnit === 'kJ') { value.code = 'A001'; value.name = '열량'; value.unit = 'kcal'; energies.push({ row: rowIndex, value }); } else review.leftoverText.push(m[0]); }
+      if (!name) { if (value.printedUnit === 'kcal' || value.printedUnit === 'kJ') { value.code = 'A001'; value.name = '열량'; value.unit = 'kcal'; value.match = 'nameless_energy_unit'; value.needsReview = false; energies.push({ row: rowIndex, value }); } else review.leftoverText.push(m[0]); }
       else { if (hit.match === 'suggested') value.reviewReasons.push(`'${name}' → '${value.name}' 표기 확인`); if (!e) value.reviewReasons.push(hit.match === 'ambiguous' ? '후보 중 성분 선택 필요' : '사전에 없는 성분: 목록에서 선택 필요'); if (kind === 'bare') value.reviewReasons.push('단위를 읽지 못함'); items.push(value); }
       previous = value;
     }
