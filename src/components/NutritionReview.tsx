@@ -12,8 +12,8 @@ import type { FmsFood } from '../lib/nutritionValidation';
 
 const boundNames = { lt: '미만', lte: '이하', gt: '초과', gte: '이상' };
 
-function ValueRow({ item, id, value, onChange, onRemove, onMoveUp, onMoveDown }: {
-  item: NutritionValue; id: string; value: string; onChange: (value: string) => void; onRemove?: () => void; onMoveUp?: () => void; onMoveDown?: () => void;
+function ValueRow({ item, id, value, locked, onChange, onRemove, onMoveUp, onMoveDown }: {
+  item: NutritionValue; id: string; value: string; locked: boolean; onChange: (value: string) => void; onRemove?: () => void; onMoveUp?: () => void; onMoveDown?: () => void;
 }) {
   const uncertain = item.state === 'conflict' || item.alternatives.length > 0;
   const [bound, setBound] = useState(item.operator ? boundNames[item.operator] : '');
@@ -24,8 +24,8 @@ function ValueRow({ item, id, value, onChange, onRemove, onMoveUp, onMoveDown }:
       <View style={styles.valueLine}>
         <Text style={styles.name}>{item.name}</Text>
         <QuantityInput testID={id} accessibilityLabel={`${item.name} 함량`} value={value}
-          onChangeText={onChange}
-          placeholderTextColor={colors.body} style={styles.input} />
+          editable={!locked} onChangeText={onChange}
+          placeholderTextColor={colors.body} style={[styles.input, locked && styles.inputLocked]} />
         <Text style={styles.unit}>{unit}</Text>
         {item.operator && <Pressable accessibilityRole="button" accessibilityLabel={`${item.name} 범위 수정`}
           onPress={() => setEditingBound(true)} style={styles.bound}><Text style={styles.body}>{bound || '범위 없음'}</Text></Pressable>}
@@ -40,7 +40,7 @@ function ValueRow({ item, id, value, onChange, onRemove, onMoveUp, onMoveDown }:
       {item.notices.map((notice, i) => <Text key={i} style={styles.hint}>{notice}</Text>)}
       {item.alternatives.map((choice, i) => (
         <Pressable key={i} accessibilityRole="button" accessibilityLabel={`${item.name} ${choice.value} ${choice.unit} 선택`}
-          onPress={() => onChange(choice.value)} style={styles.choice}>
+          disabled={locked} onPress={() => onChange(choice.value)} style={[styles.choice, locked && { opacity: 0.5 }]}>
           <Text style={styles.body}>{choice.value} {choice.unit} — {choice.label}</Text>
         </Pressable>
       ))}
@@ -58,7 +58,7 @@ function ValueRow({ item, id, value, onChange, onRemove, onMoveUp, onMoveDown }:
   );
 }
 
-export function NutritionReview({ result, lines = [], entryMode = 'photo', food }: { food?: FmsFood; result: NutritionLabelResult; lines?: OcrLine[]; entryMode?: 'photo' | 'manual' | 'reference' }) {
+export function NutritionReview({ result, lines = [], entryMode = 'photo', food, onCancel }: { food?: FmsFood; result: NutritionLabelResult; lines?: OcrLine[]; entryMode?: 'photo' | 'manual' | 'reference'; onCancel?: () => void }) {
   const [basisText, setBasisText] = useState(entryMode === 'photo' ? describeNutritionBasis(result.basis) : '');
   const [packageQuantity, setPackageQuantity] = useState(result.package?.quantity ?? '');
   const [packageUnit, setPackageUnit] = useState(result.package?.unit ?? 'g');
@@ -67,6 +67,9 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food 
   const [draftQuantity, setDraftQuantity] = useState(packageQuantity);
   const [draftUnit, setDraftUnit] = useState(packageUnit);
   const [registrationNotice, setRegistrationNotice] = useState(false);
+  // Photo results are read-only until the user presses 수정; manual entry starts from empty fields, so it stays editable.
+  const [editingValues, setEditingValues] = useState(false);
+  const valuesLocked = entryMode === 'photo' && !editingValues;
   const [pickerOpen, setPickerOpen] = useState(false);
   const [manualValues, setManualValues] = useState<NutritionValue[]>([]);
   const unresolved = [...result.review.unmatched, ...result.review.ambiguous];
@@ -103,11 +106,16 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food 
     setManualValues(previous => previous.some(value => value.code === code) ? previous : [...previous, item]);
     setRowOrder(previous => previous.includes(code) ? previous : [...previous, code]);
     setValueDrafts(previous => ({ ...previous, [code]: '' }));
+    setEditingValues(true);
     setPickerOpen(false);
   }
   const multipleBases = result.review.notes.some(note => note.includes('여러 기준') || note.includes('기준량이 여러 개'));
   function editBasis() {
     setDraftBasis(basisText); setDraftQuantity(packageQuantity); setDraftUnit(packageUnit); setEditingBasis(true);
+  }
+  function toggleEditing() {
+    if (editingValues) setEditingValues(false);
+    else { setEditingValues(true); editBasis(); }
   }
   return (
     <View testID="nutrition-review" style={styles.section}>
@@ -119,8 +127,8 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food 
             {packageQuantity !== '' && <Text style={styles.body}>총 내용량 {packageQuantity} {packageUnit}</Text>}
             <Text testID="nutrition-basis-summary" style={styles.body}>영양정보 기준: {basisText}</Text>
           </View>
-          <Pressable testID="nutrition-edit-basis" accessibilityRole="button" accessibilityLabel="영양정보 기준 수정" onPress={editBasis} style={styles.edit}>
-            <Text style={styles.editText}>수정</Text>
+          <Pressable testID="nutrition-edit-basis" accessibilityRole="button" accessibilityLabel={editingValues ? '수정 완료' : '영양정보 수정'} onPress={toggleEditing} style={styles.edit}>
+            <Text style={styles.editText}>{editingValues ? '완료' : '수정'}</Text>
           </Pressable>
         </View> : <View style={styles.manualFields}>
           <Text style={styles.body}>총 내용량</Text>
@@ -135,7 +143,7 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food 
         </View>}
         {multipleBases && <Text style={styles.hint}>사진에 기준량이 여러 개 있습니다. 사용할 열 하나와 각 함량을 확인해 주세요.</Text>}
         {entryMode === 'photo' && !multipleBases && (result.basis.needsReview || result.basis.needsUnitWeight) && <Text style={styles.hint}>사진에 적힌 기준을 확인해 주세요.</Text>}
-        {values.map((item, i) => <ValueRow key={item.code ?? i} item={item} id={`nutrition-value-${item.code}`} value={valueDrafts[item.code ?? item.name] ?? ''}
+        {values.map((item, i) => <ValueRow key={item.code ?? i} item={item} id={`nutrition-value-${item.code}`} value={valueDrafts[item.code ?? item.name] ?? ''} locked={valuesLocked}
           onChange={value => setValueDrafts(previous => ({ ...previous, [item.code ?? item.name]: value }))}
           onRemove={manualValues.some(value => value.code === item.code) ? () => removeNutrient(item.code) : undefined}
           onMoveUp={i > 0 ? () => moveNutrient(item.code, -1) : undefined}
@@ -151,6 +159,10 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food 
           onPress={register} style={({ pressed }) => [styles.register, pressed && { opacity: 0.8 }]}>
           <Text style={styles.registerText}>등록</Text>
         </Pressable>
+        {onCancel && <Pressable testID="cancel-nutrition" accessibilityRole="button" accessibilityLabel="취소"
+          onPress={onCancel} style={({ pressed }) => [styles.cancel, pressed && { opacity: 0.8 }]}>
+          <Text style={styles.cancelText}>취소</Text>
+        </Pressable>}
         <Text style={styles.registrationHint}>{entryMode === 'photo' ? '사진과 영양정보가 일치하는지 확인한 후 등록해 주세요.' : '선택한 FMS 식품·기준량·영양정보를 확인한 후 등록해 주세요.'}</Text>
       </View>
       {pickerOpen && <NutrientPicker selectedCodes={selectedCodes} onSelect={addNutrient} onClose={() => setPickerOpen(false)} />}
@@ -204,6 +216,7 @@ const styles = StyleSheet.create({
   valueLine: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   name: { color: colors.text, fontSize: 17, fontWeight: '600', flexGrow: 1, flexBasis: 90 },
   input: { minWidth: 76, maxWidth: 130, minHeight: 46, padding: 10, color: colors.text, fontSize: 18, borderColor: colors.cardBorder, borderWidth: 1, borderRadius: 10, backgroundColor: colors.background, textAlign: 'right' },
+  inputLocked: { backgroundColor: 'transparent', borderColor: 'transparent' },
   unit: { color: colors.text, fontSize: 16, minWidth: 28 },
   bound: { minHeight: 44, justifyContent: 'center' },
   choice: { borderWidth: 1, borderColor: colors.cardBorder, borderRadius: 8, padding: 10 },
@@ -214,6 +227,8 @@ const styles = StyleSheet.create({
   registration: { gap: 10 },
   register: { minHeight: 56, borderRadius: 16, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   registerText: { color: colors.background, fontSize: 20, fontWeight: '700' },
+  cancel: { minHeight: 56, borderRadius: 16, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
+  cancelText: { color: colors.primary, fontSize: 20, fontWeight: '700' },
   registrationHint: { color: colors.body, textAlign: 'center', fontSize: 14, lineHeight: 22 },
   backdrop: { flex: 1, backgroundColor: 'rgba(31,40,65,0.25)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   modal: { width: '100%', maxWidth: 420, borderRadius: 20, backgroundColor: colors.background, padding: 24, gap: 14 },

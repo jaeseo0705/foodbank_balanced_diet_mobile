@@ -318,6 +318,26 @@ test('structured nutrition allows edits, keeps missing values empty, and clears 
   expect(byId('nutrition-review')).toBeUndefined();
 });
 
+test('photo nutrition values are locked until 수정 is pressed, and 취소 returns to the start', async () => {
+  recognizeNutritionText.mockResolvedValue({ text: '나트륨 550 mg', lines: [], languages: ['ko-KR'], nutrition: {
+    basis: { type: 'total_package', quantity: '80', unit: 'g', needsReview: false, needsUnitWeight: false },
+    required: [{ code: 'A002', name: '나트륨', value: '550', unit: 'mg', state: 'exact', needsReview: false, reviewReasons: [], notices: [], alternatives: [] }],
+    additional: [], review: { unmatched: [], ambiguous: [], conflicts: [], leftoverText: [], notes: [] },
+  } });
+  await selectOcrPhoto();
+  await act(async () => { byId('read-nutrition-text').props.onPress(); });
+  expect(byId('nutrition-value-A002').props.editable).toBe(false);
+  await act(async () => { byId('nutrition-edit-basis').props.onPress(); });
+  await act(async () => { byId('nutrition-basis-apply').props.onPress(); });
+  expect(byId('nutrition-value-A002').props.editable).toBe(true);
+  await act(async () => { byId('nutrition-edit-basis').props.onPress(); });
+  expect(byId('nutrition-value-A002').props.editable).toBe(false);
+  expect(byId('cancel-nutrition')).toBeDefined();
+  await act(async () => { byId('cancel-nutrition').props.onPress(); });
+  expect(byId('nutrition-review')).toBeUndefined();
+  expect(byId('picked-nutrition-image')).toBeUndefined();
+});
+
 test('OCR reads the photo without exposing its raw text', async () => {
   await selectOcrPhoto();
   await act(async () => { byId('read-nutrition-text').props.onPress(); });

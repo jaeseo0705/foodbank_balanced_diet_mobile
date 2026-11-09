@@ -26,7 +26,7 @@ export function ManualNutritionScreen({ onBack, reference = false, food }: { onB
             <Text style={styles.label}>{food?.name ?? '영양정보를 입력할 식품'}</Text>
             <Text style={styles.body}>{food ? `FMS 식품 번호: ${food.id}` : '추후 FMS에서 불러온 식품 정보가 여기에 표시됩니다.'}</Text>
           </View>
-          <NutritionReview food={food} result={result} entryMode={reference ? 'reference' : 'manual'} />
+          <NutritionReview food={food} result={result} entryMode={reference ? 'reference' : 'manual'} onCancel={onBack} />
         </View>
       </ScrollView>
     </SafeAreaView>

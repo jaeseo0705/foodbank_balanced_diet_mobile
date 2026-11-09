@@ -230,7 +230,7 @@ export function NutritionRegistrationScreen({ onBack, food }: { onBack: () => vo
                   {ocrResult.text.trim() === '' ? (
                     <Text testID="ocr-empty" style={styles.resultHint}>글자를 찾지 못했습니다. 영양성분표가 선명하게 보이도록 다시 촬영해 주세요.</Text>
                   ) : ocrResult.nutrition ? (
-                    <NutritionReview food={food} key={ocrToken.current} result={ocrResult.nutrition} lines={ocrResult.lines} />
+                    <NutritionReview food={food} key={ocrToken.current} result={ocrResult.nutrition} lines={ocrResult.lines} onCancel={() => updatePhoto(null)} />
                   ) : (
                     <Text testID="ocr-unavailable" style={styles.resultHint}>{ocrResult.nutritionError ?? '영양정보를 정리하지 못했습니다. 최신 앱인지 확인한 뒤 다시 시도해 주세요.'}</Text>
                   )}
