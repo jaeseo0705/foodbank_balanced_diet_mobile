@@ -75,6 +75,9 @@ export function LoginScreen({ onLogin, message = '' }: { onLogin: (email: string
                   placeholderTextColor="#777777"
                   style={styles.passwordInput}
                   secureTextEntry={!showPassword}
+                  keyboardType={Platform.OS === 'ios' ? 'ascii-capable' : 'default'}
+                  spellCheck={false}
+                  textContentType="none"
                   autoCapitalize="none"
                   autoCorrect={false}
                   autoComplete="off"
