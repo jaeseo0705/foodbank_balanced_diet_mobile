@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackIcon } from '../components/TaskIcons';
+import { FmsFoodSummary } from '../components/FmsFoodSummary';
 import { NutritionReview } from '../components/NutritionReview';
 import { createManualNutrition } from '../lib/manualNutrition';
 import type { FmsFood } from '../lib/nutritionValidation';
 import { colors } from '../theme';
 
-export function ManualNutritionScreen({ onBack, reference = false, food }: { onBack: () => void; reference?: boolean; food?: FmsFood }) {
+export function ManualNutritionScreen({ onBack, reference = false, food, onChangeFood }: { onBack: () => void; reference?: boolean; food?: FmsFood; onChangeFood?: () => void }) {
   const [result] = useState(createManualNutrition);
   return (
     <SafeAreaView testID="section-screen" style={styles.screen}>
@@ -22,10 +23,7 @@ export function ManualNutritionScreen({ onBack, reference = false, food }: { onB
             <Text style={styles.body}>출처: 식약처 K-FIND 식품영양성분 DB</Text>
             <Text style={styles.body}>조회한 식품의 종류·조리 상태·함량 기준량을 확인해 입력해 주세요. 해당 제품의 실제 함량과 다를 수 있습니다.</Text>
           </View>}
-          <View testID="fms-food-summary" style={styles.source}>
-            <Text style={styles.label}>{food?.name ?? '영양정보를 입력할 식품'}</Text>
-            <Text style={styles.body}>{food ? `FMS 식품 번호: ${food.id}` : '추후 FMS에서 불러온 식품 정보가 여기에 표시됩니다.'}</Text>
-          </View>
+          {food && <FmsFoodSummary food={food} onChange={onChangeFood} />}
           <NutritionReview food={food} result={result} entryMode={reference ? 'reference' : 'manual'} onCancel={onBack} />
         </View>
       </ScrollView>
@@ -46,3 +44,4 @@ const styles = StyleSheet.create({
   sourceTitle: { color: colors.primary, fontWeight: '700', fontSize: 16 },
   body: { color: colors.body, fontSize: 14, lineHeight: 22 },
 });
+

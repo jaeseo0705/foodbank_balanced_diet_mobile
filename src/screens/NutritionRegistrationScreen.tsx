@@ -3,6 +3,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { ActivityIndicator, BackHandler, Image, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { FmsFoodSummary } from '../components/FmsFoodSummary';
 import { NutritionReview } from '../components/NutritionReview';
 import { BackIcon } from '../components/TaskIcons';
 import { RegistrationActionIcon, RegistrationArtwork, type RegistrationMethod } from '../components/RegistrationArtwork';
@@ -23,7 +24,7 @@ const methods: ReadonlyArray<{ id: RegistrationMethod; label: string }> = [
 type Notice = { title: string; message: string; settings?: boolean };
 
 
-export function NutritionRegistrationScreen({ onBack, food }: { onBack: () => void; food?: FmsFood }) {
+export function NutritionRegistrationScreen({ onBack, food, onChangeFood }: { onBack: () => void; food?: FmsFood; onChangeFood?: () => void }) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [route, setRoute] = useState<'methods' | 'manual' | 'search' | 'reference'>('methods');
@@ -159,7 +160,7 @@ export function NutritionRegistrationScreen({ onBack, food }: { onBack: () => vo
   const artworkSize = Math.min(250, contentWidth * 0.68);
   const heroHeight = Math.max(210, Math.min(300, availableHeight * 0.38));
 
-  if (route === 'manual' || route === 'reference') return <ManualNutritionScreen food={food} reference={route === 'reference'} onBack={() => setRoute(route === 'reference' ? 'search' : 'methods')} />;
+  if (route === 'manual' || route === 'reference') return <ManualNutritionScreen onChangeFood={onChangeFood} food={food} reference={route === 'reference'} onBack={() => setRoute(route === 'reference' ? 'search' : 'methods')} />;
   if (route === 'search') return <FoodSearchScreen onBack={() => setRoute('methods')} onManual={() => setRoute('reference')} />;
 
   return (
@@ -179,6 +180,8 @@ export function NutritionRegistrationScreen({ onBack, food }: { onBack: () => vo
             <Text accessibilityRole="header" style={styles.title}>영양성분 등록</Text>
             <View style={styles.headerBalance} />
           </View>
+
+          {food && <FmsFoodSummary food={food} onChange={onChangeFood} />}
 
           {photo ? (
             <View style={[styles.hero, { minHeight: heroHeight }]}>
@@ -324,3 +327,4 @@ const styles = StyleSheet.create({
   close: { minHeight: 44, padding: 12, marginTop: 16, alignSelf: 'flex-end' },
   closeText: { color: colors.primary, fontSize: 17, fontWeight: '700' },
 });
+

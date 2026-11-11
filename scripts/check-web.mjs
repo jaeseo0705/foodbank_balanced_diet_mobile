@@ -19,6 +19,21 @@ try {
   await mkdir('qa-output', { recursive: true });
   browser = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined });
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+  // Network fixtures exercise authentication and product selection without production credentials.
+  await page.route('https://aqbmgufdixxhvtmmrwyp.supabase.co/**', async route => {
+    const url = route.request().url();
+    const headers = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'apikey,content-type,authorization', 'access-control-allow-methods': 'GET,POST,OPTIONS' };
+    if (route.request().method() === 'OPTIONS') { await route.fulfill({ status: 204, headers, body: '' }); return; }
+    const body = url.includes('/auth/v1/token') ? { access_token: 'fixture-access', refresh_token: 'fixture-refresh', expires_in: 3600, user: { id: 'fixture-user' } }
+      : [{ revision: 1, products: [{ id: 'p1', name: '시험 물품', barcode: '880001', category: '식품', unit: '개' }] }];
+    await route.fulfill({ status: 200, headers, contentType: 'application/json', body: JSON.stringify(body) });
+  });
+  async function login() {
+    await page.getByTestId('username-input').fill('test@example.com');
+    await page.getByTestId('password-input').fill('test-password');
+    await page.getByRole('button', { name: '로그인', exact: true }).click();
+    await page.getByTestId('task-selection-screen').waitFor();
+  }
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   async function checkTasks() {
@@ -53,6 +68,7 @@ try {
   }
   async function checkRegistration(name, preview = false) {
     await page.getByTestId('task-nutrition-registration').click();
+    await page.getByTestId('fms-product-p1').click();
     await page.getByTestId('nutrition-registration-screen').waitFor();
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     const screenshot = await page.screenshot({ path: 'qa-output/nutrition-registration-' + name + '.png', fullPage: true });
@@ -116,6 +132,8 @@ try {
       }
     }
     await page.getByRole('button', { name: '뒤로', exact: true }).click();
+    await page.getByTestId('fms-product-picker').waitFor();
+    await page.getByRole('button', { name: '뒤로', exact: true }).click();
     await page.getByTestId('task-selection-screen').waitFor();
   }
   await page.goto(baseUrl);
@@ -130,29 +148,24 @@ try {
   assert.equal(await page.getByLabel('비밀번호', { exact: true }).inputValue(), 'sample-password');
   await page.getByRole('button', { name: '아이디 · 비밀번호 찾기', exact: true }).click();
   await page.getByRole('button', { name: '확인', exact: true }).click();
-  for (const checked of [true, false]) {
-    await page.reload();
-    const checkbox = page.getByRole('checkbox', { name: '로그인 상태 유지', exact: true });
-    if (!checked) await checkbox.click();
-    assert.equal(await checkbox.getAttribute('aria-checked'), String(checked));
-    // Empty credentials must be accepted regardless of checkbox state.
-    await page.getByRole('button', { name: '로그인', exact: true }).click();
-    await page.getByTestId('task-selection-screen').waitFor();
-    await checkTasks();
-    assert.equal(await page.getByTestId('login-screen').count(), 0);
-    await page.reload();
-    await page.getByTestId('login-screen').waitFor();
-    assert.equal(await page.getByLabel('아이디', { exact: true }).inputValue(), '');
-    assert.equal(await page.getByLabel('비밀번호', { exact: true }).inputValue(), '');
-  }
+  await page.reload();
   await page.getByRole('button', { name: '로그인', exact: true }).click();
+  await page.getByTestId('login-error').waitFor();
+  assert.equal(await page.getByTestId('task-selection-screen').count(), 0);
+  await login();
+  await checkTasks();
+  await page.reload();
+  await page.getByTestId('login-screen').waitFor();
+  assert.equal(await page.getByLabel('이메일', { exact: true }).inputValue(), '');
+  assert.equal(await page.getByLabel('비밀번호', { exact: true }).inputValue(), '');
+  await login();
   await checkTasks();
   const preview = await page.screenshot({ path: 'qa-output/task-selection-phone.png', fullPage: true });
   if (process.env.QA_PREVIEW_LOG === '1') console.log('QA_IMAGE_START' + preview.toString('base64') + 'QA_IMAGE_END');
   await checkRegistration('phone', true);
   for (const label of ['영양성분 등록', '재고 현황', '배분 추천', '영양 계산']) {
     await page.getByRole('button', { name: label, exact: true }).click();
-    await page.getByRole('heading', { name: label, exact: true }).waitFor();
+    await page.getByRole('heading', { name: label === '영양성분 등록' ? '물품 선택' : label, exact: true }).waitFor();
     await page.getByRole('button', { name: '뒤로', exact: true }).click();
     await page.getByTestId('task-selection-screen').waitFor();
   }
@@ -168,8 +181,7 @@ try {
     await page.getByTestId('login-screen').waitFor();
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     await page.screenshot({ path: `qa-output/login-${name}.png`, fullPage: true });
-    await page.getByRole('button', { name: '로그인', exact: true }).click();
-    await page.getByTestId('task-selection-screen').waitFor();
+    await login();
     await checkTasks();
     await checkRegistration(name);
     await page.getByTestId('task-nutrition-calculation').scrollIntoViewIfNeeded();
@@ -184,3 +196,4 @@ try {
   if (browser) await browser.close();
   server.kill();
 }
+

@@ -1,18 +1,28 @@
 import { useRef, useState } from 'react';
 import {
-  KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView,
+  ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView,
   StyleSheet, Text, TextInput, useWindowDimensions, View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CheckIcon, EyeIcon } from '../components/Icons';
+import { EyeIcon } from '../components/Icons';
 import { NutritionIllustration } from '../components/NutritionIllustration';
 
-export function LoginScreen({ onLogin }: { onLogin: () => void }) {
+export function LoginScreen({ onLogin, message = '' }: { onLogin: (email: string, password: string) => Promise<void>; message?: string }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [keepLoggedIn, setKeepLoggedIn] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const submitting = useRef(false);
+  async function submit() {
+    if (submitting.current) return;
+    if (!username.trim() || !password) { setError('이메일과 비밀번호를 입력해 주세요.'); return; }
+    submitting.current = true; setBusy(true); setError('');
+    try { await onLogin(username.trim(), password); }
+    catch (error) { setError(error instanceof Error ? error.message : '로그인하지 못했습니다.'); }
+    finally { submitting.current = false; setBusy(false); }
+  }
   const [showRecovery, setShowRecovery] = useState(false);
   const passwordRef = useRef<TextInput>(null);
   const { width, height } = useWindowDimensions();
@@ -38,16 +48,18 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
             <View style={styles.fields}>
               <TextInput
-                accessibilityLabel="아이디"
+                accessibilityLabel="이메일"
                 testID="username-input"
                 value={username}
                 onChangeText={setUsername}
-                placeholder="아이디"
+                placeholder="FMS 계정 이메일"
                 placeholderTextColor="#777777"
                 style={styles.input}
                 autoCapitalize="none"
                 autoCorrect={false}
                 autoComplete="off"
+                keyboardType="email-address"
+                editable={!busy}
                 returnKeyType="next"
                 onSubmitEditing={() => passwordRef.current?.focus()}
                 underlineColorAndroid="transparent"
@@ -66,8 +78,9 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
                   autoCapitalize="none"
                   autoCorrect={false}
                   autoComplete="off"
+                  editable={!busy}
                   returnKeyType="go"
-                  onSubmitEditing={onLogin}
+                  onSubmitEditing={submit}
                   underlineColorAndroid="transparent"
                 />
                 <Pressable
@@ -83,31 +96,20 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
               </View>
             </View>
 
-            <Pressable
-              accessibilityRole="checkbox"
-              accessibilityLabel="로그인 상태 유지"
-              accessibilityHint="앱이 실행 중인 동안에만 적용됩니다. 앱을 완전히 종료하면 초기화됩니다."
-              accessibilityState={{ checked: keepLoggedIn }}
-              aria-checked={keepLoggedIn}
-              testID="keep-logged-in"
-              onPress={() => setKeepLoggedIn((value) => !value)}
-              style={({ pressed }) => [styles.rememberRow, pressed && styles.pressed]}
-            >
-              <View style={[styles.checkbox, keepLoggedIn && styles.checkboxChecked]}>
-                {keepLoggedIn && <CheckIcon />}
-              </View>
-              <Text style={styles.rememberText}>로그인 상태 유지</Text>
-            </Pressable>
+            <Text style={styles.rememberText}>FMS와 같은 계정으로 로그인해 주세요.</Text>
+            {!!(error || message) && <Text testID="login-error" accessibilityRole="alert" style={styles.modalText}>{error || message}</Text>}
 
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="로그인"
               testID="login-button"
-              onPress={onLogin}
+              onPress={submit}
+              disabled={busy}
+              accessibilityState={{ busy, disabled: busy }}
               style={({ pressed }) => [styles.loginButton, pressed && styles.loginPressed]}
             >
               <LinearGradient colors={['#5C70AA', '#53669F']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.loginGradient}>
-                <Text style={styles.loginText}>로그인</Text>
+                {busy ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.loginText}>로그인</Text>}
               </LinearGradient>
             </Pressable>
 
@@ -128,7 +130,7 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard} accessibilityViewIsModal>
             <Text style={styles.modalTitle} accessibilityRole="header">아이디 · 비밀번호 찾기</Text>
-            <Text style={styles.modalText}>현재는 계정 없이 이용할 수 있는 시험용 앱입니다. 로그인 버튼을 누르면 바로 이동합니다.</Text>
+            <Text style={styles.modalText}>FMS에 사용하는 이메일 계정으로 로그인해 주세요. 계정이나 비밀번호를 모르면 계정을 만든 관리자에게 문의해 주세요.</Text>
             <Pressable accessibilityRole="button" accessibilityLabel="확인" onPress={() => setShowRecovery(false)} style={styles.modalClose}>
               <Text style={styles.modalCloseText}>확인</Text>
             </Pressable>
@@ -185,3 +187,4 @@ const styles = StyleSheet.create({
   modalClose: { alignSelf: 'flex-end', paddingHorizontal: 18, paddingVertical: 12, marginTop: 16, minHeight: 44 },
   modalCloseText: { color: '#53669F', fontSize: 17, fontWeight: '700' },
 });
+

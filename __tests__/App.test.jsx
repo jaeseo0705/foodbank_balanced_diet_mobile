@@ -3,6 +3,7 @@ import { AppState, Keyboard, Linking, Platform, TextInput } from 'react-native';
 import App from '../App';
 import * as ImagePicker from 'expo-image-picker';
 import { recognizeNutritionText } from '../src/lib/ocr';
+import { createFmsClient } from '../src/lib/fmsCloud';
 import { OcrError } from '../src/lib/ocr.types';
 jest.mock('../src/lib/ocr', () => ({ recognizeNutritionText: jest.fn() }));
 
@@ -13,7 +14,26 @@ jest.mock('expo-image-picker', () => ({
   getPendingResultAsync: jest.fn(),
 }));
 
+jest.mock('../src/lib/fmsCloud', () => ({ createFmsClient: jest.fn(() => ({
+  signIn: jest.fn().mockResolvedValue(undefined), clear: jest.fn(),
+  loadProducts: jest.fn().mockResolvedValue([
+    { id: 'p1', name: '시험 물품', barcode: '880001', workspaceUserId: 'u1' },
+    { id: 'p2', name: '다른 물품', barcode: '880002', workspaceUserId: 'u1' },
+  ]),
+})) }));
 let renderer;
+async function login() {
+  await act(async () => {
+    byId('username-input').props.onChangeText('test@example.com');
+    byId('password-input').props.onChangeText('test-password');
+  });
+  await act(async () => { await byId('login-button').props.onPress(); });
+}
+async function openNutritionTask() {
+  await act(async () => { byId('task-nutrition-registration').props.onPress(); });
+  await act(async () => { byId('fms-product-p1').props.onPress(); });
+}
+
 
 function byId(id) {
   return renderer.root.findAllByProps({ testID: id })[0];
@@ -33,10 +53,10 @@ afterEach(async () => {
   jest.restoreAllMocks();
 });
 
-test('login with empty fields opens task selection and dismisses the keyboard', async () => {
+test('authenticated login opens task selection and dismisses the keyboard', async () => {
   const dismiss = jest.spyOn(Keyboard, 'dismiss');
   expect(byId('login-screen')).toBeDefined();
-  await act(async () => { byId('login-button').props.onPress(); });
+  await login();
   expect(dismiss).toHaveBeenCalled();
   expect(byId('task-selection-screen')).toBeDefined();
   expect(byId('login-screen')).toBeUndefined();
@@ -53,28 +73,32 @@ test('password visibility toggles without changing the entered password', async 
   expect(byId('password-input').props.secureTextEntry).toBe(true);
 });
 
-test.each([true, false])('fresh app instance returns to login with keepLoggedIn=%s', async (keepLoggedIn) => {
-  if (!keepLoggedIn) {
-    await act(async () => { byId('keep-logged-in').props.onPress(); });
-  }
-  expect(byId('keep-logged-in').props.accessibilityState.checked).toBe(keepLoggedIn);
-  await act(async () => {
-    byId('username-input').props.onChangeText('test-user');
-    byId('password-input').props.onChangeText('test-password');
-  });
-  await act(async () => { byId('login-button').props.onPress(); });
+test('fresh app instance requires authentication and clears credentials', async () => {
+  await login();
   expect(byId('task-selection-screen')).toBeDefined();
   await act(async () => { renderer.unmount(); renderer = create(<App />); });
   expect(byId('login-screen')).toBeDefined();
   expect(byId('task-selection-screen')).toBeUndefined();
   expect(byId('username-input').props.value).toBe('');
   expect(byId('password-input').props.value).toBe('');
+  expect(byId('keep-logged-in')).toBeUndefined();
+});
+
+test('empty credentials and failed authentication do not open the workspace', async () => {
+  await act(async () => { await byId('login-button').props.onPress(); });
+  expect(byId('login-error')).toBeDefined();
+  expect(byId('task-selection-screen')).toBeUndefined();
+  const client = createFmsClient.mock.results.at(-1).value;
+  client.signIn.mockRejectedValueOnce(new Error('로그인 실패'));
+  await login();
+  expect(byId('task-selection-screen')).toBeUndefined();
+  expect(byId('login-error').props.children).toBe('로그인 실패');
 });
 
 test('backgrounding does not register an automatic logout handler', async () => {
   const listener = jest.spyOn(AppState, 'addEventListener');
   await act(async () => { renderer.unmount(); renderer = create(<App />); });
-  await act(async () => { byId('login-button').props.onPress(); });
+  await login();
   expect(listener.mock.calls.filter(([event]) => event === 'change')).toHaveLength(0);
   expect(byId('task-selection-screen')).toBeDefined();
 });
@@ -85,7 +109,7 @@ test.each([
   ['distribution', '배분 추천'],
   ['nutrition-calculation', '영양 계산'],
 ])('task %s opens its section and returns home', async (id, label) => {
-  await act(async () => { byId('login-button').props.onPress(); });
+  await login();
   expect(byId('task-' + id).props.accessibilityLabel).toBe(label);
   await act(async () => { byId('task-' + id).props.onPress(); });
   expect(byId('section-screen')).toBeDefined();
@@ -95,7 +119,7 @@ test.each([
 });
 
 test('profile settings returns to profile and logout clears the session', async () => {
-  await act(async () => { byId('login-button').props.onPress(); });
+  await login();
   await act(async () => { byId('profile-button').props.onPress(); });
   const menu = (label) => renderer.root.findAllByProps({ accessibilityLabel: label })[0];
   expect(byId('profile-screen')).toBeDefined();
@@ -105,13 +129,13 @@ test('profile settings returns to profile and logout clears the session', async 
   expect(byId('profile-screen')).toBeDefined();
   await act(async () => { menu('로그아웃').props.onPress(); });
   expect(byId('login-screen')).toBeDefined();
-  await act(async () => { byId('login-button').props.onPress(); });
+  await login();
   expect(byId('task-selection-screen')).toBeDefined();
 });
 
 test('manual entry opens without a photo and starts every nutrient empty', async () => {
-  await act(async () => { byId('login-button').props.onPress(); });
-  await act(async () => { byId('task-nutrition-registration').props.onPress(); });
+  await login();
+  await openNutritionTask();
   const order = renderer.root.findAll(node => /^registration-(camera|photo|search|manual)$/.test(node.props.testID ?? '') && node.props.onPress).map(node => node.props.testID);
   expect([...new Set(order)]).toEqual(['registration-camera', 'registration-photo', 'registration-search', 'registration-manual']);
   await act(async () => { byId('registration-manual').props.onPress(); });
@@ -169,8 +193,8 @@ test('manual entry opens without a photo and starts every nutrient empty', async
 
 test('food search opens the official DB, handles link errors, and leads to reference entry', async () => {
   const open = jest.spyOn(Linking, 'openURL').mockRejectedValueOnce(new Error('offline')).mockResolvedValue(undefined);
-  await act(async () => { byId('login-button').props.onPress(); });
-  await act(async () => { byId('task-nutrition-registration').props.onPress(); });
+  await login();
+  await openNutritionTask();
   await act(async () => { byId('registration-search').props.onPress(); });
   expect(byId('food-search-screen')).toBeDefined();
   await act(async () => { byId('open-public-food-search').props.onPress(); });
@@ -190,8 +214,8 @@ test('food search opens the official DB, handles link errors, and leads to refer
 const sampleAsset = { uri: 'file:///nutrition.jpg', type: 'image', width: 1600, height: 1200 };
 
 async function openRegistration() {
-  await act(async () => { byId('login-button').props.onPress(); });
-  await act(async () => { byId('task-nutrition-registration').props.onPress(); });
+  await login();
+  await openNutritionTask();
 }
 
 test.each(['camera', 'photo'])('%s returns an uncropped image preview that can be removed', async (method) => {
@@ -274,6 +298,8 @@ test('back from a preview clears the image before leaving registration', async (
   await act(async () => { byId('back-button').props.onPress(); });
   expect(byId('picked-nutrition-image')).toBeUndefined();
   expect(byId('nutrition-registration-screen')).toBeDefined();
+  await act(async () => { byId('back-button').props.onPress(); });
+  expect(byId('fms-product-picker')).toBeDefined();
   await act(async () => { byId('back-button').props.onPress(); });
   expect(byId('task-selection-screen')).toBeDefined();
 });
@@ -442,4 +468,15 @@ test('a missed nutrient is selected from the dictionary, edited, deduplicated, a
   await act(async () => { byId('remove-nutrition-photo').props.onPress(); });
   expect(byId('nutrition-review')).toBeUndefined();
   expect(byId('nutrition-value-D005')).toBeUndefined();
+});
+
+
+test('changing the selected FMS product preserves manual nutrient edits', async () => {
+  await openRegistration();
+  await act(async () => { byId('registration-manual').props.onPress(); });
+  await act(async () => { byId('nutrition-value-A001').props.onChangeText('375'); });
+  await act(async () => { byId('change-fms-food').props.onPress(); });
+  await act(async () => { byId('fms-product-p2').props.onPress(); });
+  expect(byId('nutrition-value-A001').props.value).toBe('375');
+  expect(byId('fms-food-summary')).toBeDefined();
 });
