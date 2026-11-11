@@ -11,7 +11,7 @@ export function EyeIcon({ visible }: { visible: boolean }) {
         strokeLinejoin="round"
       />
       <Circle cx={14} cy={14} r={3.7} fill="none" stroke="#8D93B5" strokeWidth={1.9} />
-      {visible && <Path d="M4 3.5 24 24.5" stroke="#8D93B5" strokeWidth={1.9} strokeLinecap="round" />}
+      {!visible && <Path d="M4 3.5 24 24.5" stroke="#8D93B5" strokeWidth={1.9} strokeLinecap="round" />}
     </Svg>
   );
 }

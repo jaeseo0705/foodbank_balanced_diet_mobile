@@ -96,7 +96,6 @@ export function LoginScreen({ onLogin, message = '' }: { onLogin: (email: string
               </View>
             </View>
 
-            <Text style={styles.rememberText}>FMS와 같은 계정으로 로그인해 주세요.</Text>
             {!!(error || message) && <Text testID="login-error" accessibilityRole="alert" style={styles.modalText}>{error || message}</Text>}
 
             <Pressable
