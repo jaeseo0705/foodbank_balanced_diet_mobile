@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { readFile } from 'node:fs/promises';
-import { stripTypeScriptTypes } from 'node:module';
+import './loadTypescript.mjs';
 import { buildInventory, inventoryCollections } from '../src/lib/fmsInventory.ts';
 
 const blank = () => ({ ...Object.fromEntries(inventoryCollections.map(key => [key, []])), products: [
@@ -53,10 +52,7 @@ test('decimal quantities are rounded as in FMS', () => {
 });
 
 // Load the actual client without Expo/Jest; all HTTP below is a test double.
-const inventoryUrl = new URL('../src/lib/fmsInventory.ts', import.meta.url).href;
-const source = stripTypeScriptTypes(await readFile(new URL('../src/lib/fmsCloud.ts', import.meta.url), 'utf8'))
-  .replace("from './fmsInventory'", `from '${inventoryUrl}'`);
-const { createFmsClient } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
+const { createFmsClient } = await import('../src/lib/fmsCloud.ts');
 const response = (data, status = 200) => ({ ok: status < 400, status, json: async () => data });
 const session = { access_token: 'access-u1', refresh_token: 'refresh-u1', expires_in: 3600, user: { id: 'u1' } };
 test('inventory requests require login, use owner filter and are read-only', async () => {
@@ -98,3 +94,4 @@ test('empty accounts and denied access are handled', async () => {
     status = 403; await assert.rejects(client.loadInventory(), /권한/);
   } finally { globalThis.fetch = previous; }
 });
+

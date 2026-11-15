@@ -11,4 +11,3 @@ export function createManualNutrition(): NutritionLabelResult {
   };
 }
 
-export const publicFoodSearchUrl = 'https://various.foodsafetykorea.go.kr/nutrient/general/food/firstList.do';

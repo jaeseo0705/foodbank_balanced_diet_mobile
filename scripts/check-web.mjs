@@ -106,7 +106,7 @@ try {
       } else if (method === 'search') {
         await button.click();
         await page.getByTestId('food-search-screen').waitFor();
-        assert.equal(await page.getByTestId('open-public-food-search').count(), 1);
+        assert.equal(await page.getByTestId('public-food-search').count(), 1);
         await page.screenshot({ path: 'qa-output/food-search-' + name + '.png', fullPage: true });
         await page.getByTestId('food-search-manual').click();
         await page.getByTestId('manual-nutrition-screen').waitFor();
@@ -207,5 +207,6 @@ try {
   if (browser) await browser.close();
   server.kill();
 }
+
 
 

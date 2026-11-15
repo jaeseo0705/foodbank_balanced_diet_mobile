@@ -1,6 +1,7 @@
 import { act, create } from 'react-test-renderer';
-import { AppState, Keyboard, Linking, Platform, TextInput } from 'react-native';
+import { AppState, Keyboard, Linking, Platform, Text, TextInput } from 'react-native';
 import App from '../App';
+import publicFoods from './fixtures/publicFoods.json';
 import * as ImagePicker from 'expo-image-picker';
 import { recognizeNutritionText } from '../src/lib/ocr';
 import { createFmsClient } from '../src/lib/fmsCloud';
@@ -20,6 +21,7 @@ jest.mock('../src/lib/fmsCloud', () => ({ createFmsClient: jest.fn(() => ({
     { id: 'p1', name: '시험 물품', barcode: '880001', category: '식품', unit: '개', quantity: 7 },
     { id: 'p2', name: '품절 물품', barcode: '880002', category: '식품', unit: '봉', quantity: 0 },
   ]),
+  searchFoods: jest.fn().mockResolvedValue([]),
   loadProducts: jest.fn().mockResolvedValue([
     { id: 'p1', name: '시험 물품', barcode: '880001', workspaceUserId: 'u1' },
     { id: 'p2', name: '다른 물품', barcode: '880002', workspaceUserId: 'u1' },
@@ -197,24 +199,53 @@ test('manual entry opens without a photo and starts every nutrient empty', async
   expect(byId('nutrition-value-A001').props.value).toBe('');
 });
 
-test('food search opens the official DB, handles link errors, and leads to reference entry', async () => {
-  const open = jest.spyOn(Linking, 'openURL').mockRejectedValueOnce(new Error('offline')).mockResolvedValue(undefined);
-  await login();
-  await openNutritionTask();
+test('public search stays in the app, retries failures and prefills reference data with attribution', async () => {
+  const open = jest.spyOn(Linking, 'openURL');
+  await login(); await openNutritionTask();
+  const client = createFmsClient.mock.results.at(-1).value;
+  client.searchFoods.mockRejectedValueOnce(new Error('검색 연결 실패')).mockResolvedValueOnce([publicFoods[0]]);
   await act(async () => { byId('registration-search').props.onPress(); });
-  expect(byId('food-search-screen')).toBeDefined();
-  await act(async () => { byId('open-public-food-search').props.onPress(); });
+  await act(async () => { byId('public-food-query').props.onChangeText('김치'); });
+  await act(async () => { await byId('public-food-search').props.onPress(); });
   expect(byId('food-search-error')).toBeDefined();
-  await act(async () => { byId('open-public-food-search').props.onPress(); });
-  expect(open).toHaveBeenCalledWith('https://various.foodsafetykorea.go.kr/nutrient/general/food/firstList.do');
+  await act(async () => { await byId('public-food-retry').props.onPress(); });
+  expect(client.searchFoods).toHaveBeenLastCalledWith('김치', 0);
   expect(byId('food-search-error')).toBeUndefined();
+  await act(async () => { byId(`public-food-${publicFoods[0].source_key}:${publicFoods[0].record_key}`).props.onPress(); });
+  expect(byId('food-search-detail')).toBeDefined();
+  expect(byId('public-food-attribution').findAllByType(Text).map(n => [n.props.children].flat().join('')).join(' ')).toContain(publicFoods[0].publisher);
+  expect(byId('manual-basis-text').props.value).toBe(`${publicFoods[0].basis}당`);
+  expect(byId('nutrition-value-A001').props.value).toBe(publicFoods[0].raw_values.R);
+  await act(async () => { byId('public-food-raw-toggle').props.onPress(); });
+  expect(byId('public-food-raw')).toBeDefined();
+  expect(open).not.toHaveBeenCalled();
+  await act(async () => { byId('back-button').props.onPress(); });
+  expect(byId('public-food-query').props.value).toBe('김치');
   await act(async () => { byId('food-search-manual').props.onPress(); });
   expect(byId('manual-nutrition-screen')).toBeDefined();
   expect(byId('nutrition-value-A001').props.value).toBe('');
   await act(async () => { byId('back-button').props.onPress(); });
   expect(byId('food-search-screen')).toBeDefined();
-  await act(async () => { byId('back-button').props.onPress(); });
-  expect(byId('nutrition-registration-screen')).toBeDefined();
+});
+
+test('search ignores stale replies after editing and paginates the current query', async () => {
+  await login(); await openNutritionTask();
+  const client = createFmsClient.mock.results.at(-1).value;
+  let finish;
+  client.searchFoods.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  await act(async () => { byId('registration-search').props.onPress(); });
+  await act(async () => { byId('public-food-query').props.onChangeText('이전'); });
+  let pending;
+  await act(async () => { pending = byId('public-food-search').props.onPress(); });
+  await act(async () => { byId('public-food-query').props.onChangeText('현재'); });
+  await act(async () => { finish([publicFoods[0]]); await pending; });
+  expect(byId(`public-food-${publicFoods[0].source_key}:${publicFoods[0].record_key}`)).toBeUndefined();
+  const page = Array.from({ length: 30 }, (_, i) => ({ ...publicFoods[0], record_key: `row${i}` }));
+  client.searchFoods.mockResolvedValueOnce(page).mockResolvedValueOnce([publicFoods[1]]);
+  await act(async () => { await byId('public-food-search').props.onPress(); });
+  await act(async () => { await byId('public-food-more').props.onPress(); });
+  expect(client.searchFoods).toHaveBeenLastCalledWith('현재', 30);
+  expect(byId('public-food-more')).toBeUndefined();
 });
 
 const sampleAsset = { uri: 'file:///nutrition.jpg', type: 'image', width: 1600, height: 1200 };
@@ -514,4 +545,5 @@ test('inventory reports cloud failures and can retry', async () => {
   expect(byId('inventory-error')).toBeUndefined();
   expect(byId('inventory-list')).toBeDefined();
 });
+
 

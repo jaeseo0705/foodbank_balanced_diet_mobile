@@ -1,5 +1,6 @@
 import { buildInventory, inventoryCollections, type InventoryItem } from './fmsInventory';
 import type { FmsFood } from './nutritionValidation';
+import { readPublicFoods, type PublicFood } from './publicFood';
 // Same public client configuration as FMS. Never use a service_role/secret key.
 const baseUrl = 'https://aqbmgufdixxhvtmmrwyp.supabase.co';
 const publicKey = 'sb_publishable_AUZp6KJ0LDAaWrBMIS3n_g_PfrKVRAy';
@@ -80,6 +81,17 @@ export function createFmsClient(onExpired: () => void) {
     if (!Array.isArray(rows) || rows.length > 1) throw Error('FMS 자료 형식을 확인해 주세요.');
     return rows.length ? buildInventory(rows[0]) : [];
   }
-  return { signIn, loadProducts, loadInventory, clear };
+  async function searchFoods(query: string, offset = 0): Promise<PublicFood[]> {
+    const term = query.trim();
+    if (!term || term.length > 100) throw Error('식품명을 1~100자로 입력해 주세요.');
+    const jwt = await token(), current = generation;
+    const rows = await request('/rest/v1/rpc/fms_food_search', {
+      token: jwt, body: { p_query: term, p_limit: 30, p_offset: Math.max(0, Math.floor(offset)) },
+    });
+    if (generation !== current) throw Error('다시 로그인해 주세요.');
+    return readPublicFoods(rows);
+  }
+  return { signIn, loadProducts, loadInventory, searchFoods, clear };
 }
+
 

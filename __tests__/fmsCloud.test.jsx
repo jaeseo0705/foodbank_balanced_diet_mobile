@@ -49,3 +49,29 @@ test('an empty account returns an empty list and never creates sample records', 
   expect(await client.loadProducts()).toEqual([]);
   expect(global.fetch.mock.calls[1][1].method).toBe('GET');
 });
+
+
+test('public food search uses the signed-in RPC, validated responses and pagination', async () => {
+  const client = createFmsClient(jest.fn());
+  global.fetch.mockResolvedValueOnce(respond(session())).mockResolvedValueOnce(respond([]));
+  await client.signIn('test@example.com', 'password');
+  expect(await client.searchFoods('  삶은 계란  ', 30)).toEqual([]);
+  const [url, options] = global.fetch.mock.calls[1];
+  expect(url).toMatch(/\/rest\/v1\/rpc\/fms_food_search$/);
+  expect(options.method).toBe('POST');
+  expect(options.headers.Authorization).toBe('Bearer access-u1');
+  expect(JSON.parse(options.body)).toEqual({ p_query: '삶은 계란', p_limit: 30, p_offset: 30 });
+  await expect(client.searchFoods('')).rejects.toThrow('입력');
+});
+
+test('search requires login and rejects responses after logout', async () => {
+  const client = createFmsClient(jest.fn());
+  await expect(client.searchFoods('밥')).rejects.toThrow('로그인');
+  expect(global.fetch).not.toHaveBeenCalled();
+  let finish;
+  global.fetch.mockResolvedValueOnce(respond(session())).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  await client.signIn('test@example.com', 'password');
+  const pending = client.searchFoods('밥');
+  await Promise.resolve(); client.clear(); finish(respond([]));
+  await expect(pending).rejects.toThrow('로그인');
+});

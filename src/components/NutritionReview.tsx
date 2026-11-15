@@ -59,7 +59,7 @@ function ValueRow({ item, id, value, locked, onChange, onRemove, onMoveUp, onMov
 }
 
 export function NutritionReview({ result, lines = [], entryMode = 'photo', food, onCancel }: { food?: FmsFood; result: NutritionLabelResult; lines?: OcrLine[]; entryMode?: 'photo' | 'manual' | 'reference'; onCancel?: () => void }) {
-  const [basisText, setBasisText] = useState(entryMode === 'photo' ? describeNutritionBasis(result.basis) : '');
+  const [basisText, setBasisText] = useState(entryMode !== 'manual' ? describeNutritionBasis(result.basis) : '');
   const [packageQuantity, setPackageQuantity] = useState(result.package?.quantity ?? '');
   const [packageUnit, setPackageUnit] = useState(result.package?.unit ?? 'g');
   const [editingBasis, setEditingBasis] = useState(false);
@@ -234,4 +234,5 @@ const styles = StyleSheet.create({
   modal: { width: '100%', maxWidth: 420, borderRadius: 20, backgroundColor: colors.background, padding: 24, gap: 14 },
   basisInput: { minHeight: 48, borderWidth: 1, borderColor: colors.cardBorder, borderRadius: 10, padding: 10, color: colors.text, fontSize: 17 },
 });
+
 

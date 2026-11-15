@@ -160,8 +160,8 @@ export function NutritionRegistrationScreen({ onBack, food, onChangeFood }: { on
   const artworkSize = Math.min(190, contentWidth * 0.52);
   const heroHeight = Math.max(160, Math.min(220, availableHeight * 0.25));
 
-  if (route === 'manual' || route === 'reference') return <ManualNutritionScreen onChangeFood={onChangeFood} food={food} reference={route === 'reference'} onBack={() => setRoute(route === 'reference' ? 'search' : 'methods')} />;
-  if (route === 'search') return <FoodSearchScreen onBack={() => setRoute('methods')} onManual={() => setRoute('reference')} />;
+  if (route === 'manual' || route === 'reference') return <ManualNutritionScreen onChangeFood={onChangeFood} food={food} onBack={() => setRoute(route === 'reference' ? 'search' : 'methods')} />;
+  if (route === 'search') return <FoodSearchScreen food={food} onBack={() => setRoute('methods')} onManual={() => setRoute('reference')} />;
 
   return (
     <SafeAreaView style={styles.screen} testID="section-screen">
@@ -354,4 +354,5 @@ const styles = StyleSheet.create({
   close: { minHeight: 44, padding: 12, marginTop: 16, alignSelf: 'flex-end' },
   closeText: { color: colors.primary, fontSize: 17, fontWeight: '700' },
 });
+
 
