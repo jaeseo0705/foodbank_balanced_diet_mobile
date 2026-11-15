@@ -81,7 +81,7 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food,
     const invalid = values.filter(item => { const draft = valueDrafts[item.code ?? item.name] ?? ''; return draft.trim() !== '' && !isNutritionNumber(draft); });
     setNoticeText(missing.length ? `필수 영양성분의 숫자를 확인해 주세요: ${missing.join(', ')}. 표시가 0이면 0을 입력해 주세요.`
       : invalid.length ? `숫자를 확인해 주세요: ${invalid.map(item => item.name).join(', ')}.`
-      : `${food ? `입력 대상: ${food.name} · 바코드 ${food.barcode || '없음'} · 물품코드 ${food.id}\n` : ''}현재는 시험 단계로, 입력값은 저장되지 않습니다.`);
+      : `${food ? `입력 대상: ${food.name} · 바코드 ${food.barcode || '없음'}\n` : ''}현재는 시험 단계로, 입력값은 저장되지 않습니다.`);
     setRegistrationNotice(true);
   }
   const [rowOrder, setRowOrder] = useState(() => originalValues.map(item => item.code));
@@ -120,7 +120,7 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food,
   return (
     <View testID="nutrition-review" style={styles.section}>
       <View style={styles.card}>
-        {entryMode === 'photo' && <View testID="photo-fms-food-summary"><Text style={styles.body}>{food ? `${food.name} · 물품코드 ${food.id}` : '영양정보를 입력할 식품'}</Text></View>}
+        {entryMode === 'photo' && <View testID="photo-fms-food-summary"><Text style={styles.body}>{food ? `${food.name} · 바코드 ${food.barcode || '없음'}` : '영양정보를 입력할 식품'}</Text></View>}
         <Text accessibilityRole="header" style={styles.title}>{entryMode === 'photo' ? '영양정보 확인' : '영양정보 입력'}</Text>
         {entryMode === 'photo' ? <View style={styles.summary}>
           <View style={{ flex: 1, gap: 6 }}>
