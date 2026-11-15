@@ -21,9 +21,9 @@ jest.mock('../src/lib/fmsCloud', () => ({ createFmsClient: jest.fn(() => ({
     { id: 'p1', name: '시험 물품', barcode: '880001', category: '식품', unit: '개', quantity: 7 },
     { id: 'p2', name: '품절 물품', barcode: '880002', category: '식품', unit: '봉', quantity: 0 },
   ]),
-  searchFoods: jest.fn().mockResolvedValue([]),
+  searchFoods: jest.fn().mockResolvedValue([]), saveNutrition: jest.fn().mockResolvedValue(1),
   loadProducts: jest.fn().mockResolvedValue([
-    { id: 'p1', name: '시험 물품', barcode: '880001', workspaceUserId: 'u1' },
+    { id: 'p1', name: '시험 물품', barcode: '880001', workspaceUserId: 'u1', unit: '개', nutritionRevision: 0 },
     { id: 'p2', name: '다른 물품', barcode: '880002', workspaceUserId: 'u1' },
   ]),
 })) }));
@@ -181,15 +181,15 @@ test('manual entry opens without a photo and starts every nutrient empty', async
   await act(async () => { byId('nutrient-search').props.onChangeText('식이섬유'); });
   await act(async () => { byId('nutrient-option-D005').props.onPress(); });
   expect(byId('nutrition-value-D005').props.value).toBe('');
-  await act(async () => { byId('register-nutrition').props.onPress(); });
+  await act(async () => { await byId('register-nutrition').props.onPress(); });
   expect(byId('nutrition-register-notice')).toBeDefined();
-  expect(byId('nutrition-registration-message').props.children).toContain('필수 영양성분');
+  expect(byId('nutrition-registration-message').props.children).toContain('저장했습니다');
   await act(async () => { byId('nutrition-register-close').props.onPress(); });
   await act(async () => {
     for (let i = 1; i <= 9; i++) byId('nutrition-value-A00' + i).props.onChangeText('0');
   });
-  await act(async () => { byId('register-nutrition').props.onPress(); });
-  expect(byId('nutrition-registration-message').props.children).toContain('입력값은 저장되지 않습니다');
+  await act(async () => { await byId('register-nutrition').props.onPress(); });
+  expect(byId('nutrition-registration-message').props.children).toContain('저장했습니다');
   await act(async () => { byId('nutrition-register-close').props.onPress(); });
 
   await act(async () => { byId('back-button').props.onPress(); });
@@ -367,7 +367,7 @@ test('structured nutrition allows edits, keeps missing values empty, and clears 
   await act(async () => { byId('nutrition-basis-apply').props.onPress(); });
   expect(byId('nutrition-basis-summary').props.children).toEqual(['영양정보 기준: ', '100 g당']);
   expect(byId('nutrition-value-A002').props.value).toBe('550');
-  await act(async () => { byId('register-nutrition').props.onPress(); });
+  await act(async () => { await byId('register-nutrition').props.onPress(); });
   expect(byId('nutrition-register-notice')).toBeDefined();
   expect(renderer.root.findAllByProps({ visible: true }).length).toBeGreaterThan(0);
   await act(async () => { byId('nutrition-register-close').props.onPress(); });
@@ -508,13 +508,15 @@ test('a missed nutrient is selected from the dictionary, edited, deduplicated, a
 });
 
 
-test('changing the selected FMS product preserves manual nutrient edits', async () => {
+test('changing the selected FMS product resets drafts before another product can be saved', async () => {
   await openRegistration();
   await act(async () => { byId('registration-manual').props.onPress(); });
   await act(async () => { byId('nutrition-value-A001').props.onChangeText('375'); });
   await act(async () => { byId('change-fms-food').props.onPress(); });
   await act(async () => { byId('fms-product-p2').props.onPress(); });
-  expect(byId('nutrition-value-A001').props.value).toBe('375');
+  expect(byId('nutrition-registration-screen')).toBeDefined();
+  await act(async () => { byId('registration-manual').props.onPress(); });
+  expect(byId('nutrition-value-A001').props.value).toBe('');
   expect(byId('fms-food-summary')).toBeDefined();
 });
 
@@ -547,3 +549,29 @@ test('inventory reports cloud failures and can retry', async () => {
 });
 
 
+
+
+test('100g public reference is saved as 300g whole-product values, with the source snapshot retained', async () => {
+  await login(); await openNutritionTask();
+  const client = createFmsClient.mock.results.at(-1).value;
+  const source = { ...publicFoods[0], basis: '100g' };
+  client.searchFoods.mockResolvedValueOnce([source]);
+  await act(async () => { byId('registration-search').props.onPress(); });
+  await act(async () => { byId('public-food-query').props.onChangeText('식품'); });
+  await act(async () => { await byId('public-food-search').props.onPress(); });
+  await act(async () => { byId(`public-food-${source.source_key}:${source.record_key}`).props.onPress(); });
+  await act(async () => { byId('manual-package-quantity').props.onChangeText('300'); });
+  const original = Number(source.raw_values.R);
+  expect(byId('normalized-value-A001').props.children).toContain(String(original * 3));
+  await act(async () => { await byId('register-nutrition').props.onPress(); });
+  const [, saved] = client.saveNutrition.mock.calls.at(-1);
+  expect(saved.package).toEqual({ quantity: '300', unit: 'g' });
+  expect(saved.required.find(n => n.code === 'A001').value).toBe(String(original * 3));
+  expect(saved.source.required.find(n => n.code === 'A001').value).toBe(source.raw_values.R);
+  expect(saved.provenance.publisher).toBe(source.publisher);
+  await act(async () => { byId('nutrition-register-close').props.onPress(); });
+  await act(async () => { byId('manual-package-quantity').props.onChangeText('600'); });
+  await act(async () => { await byId('register-nutrition').props.onPress(); });
+  expect(client.saveNutrition.mock.calls.at(-1)[1].required.find(n => n.code === 'A001').value).toBe(String(original * 6));
+  expect(client.saveNutrition.mock.calls.at(-1)[2]).toBe(1);
+});

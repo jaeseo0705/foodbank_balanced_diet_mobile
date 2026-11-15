@@ -1,6 +1,7 @@
 import { buildInventory, inventoryCollections, type InventoryItem } from './fmsInventory';
 import type { FmsFood } from './nutritionValidation';
 import { readPublicFoods, type PublicFood } from './publicFood';
+import type { NutritionRegistration } from './nutritionNormalization';
 // Same public client configuration as FMS. Never use a service_role/secret key.
 const baseUrl = 'https://aqbmgufdixxhvtmmrwyp.supabase.co';
 const publicKey = 'sb_publishable_AUZp6KJ0LDAaWrBMIS3n_g_PfrKVRAy';
@@ -24,6 +25,13 @@ export function createFmsClient(onExpired: () => void) {
       if (!response.ok) {
         if (options.token && response.status === 401) { if (generation === requestGeneration) expire(); throw Error('로그인이 만료됐습니다. 다시 로그인해 주세요.'); }
         if (path.startsWith('/auth/')) throw Error('FMS 계정의 이메일과 비밀번호를 확인해 주세요.');
+        if (path.endsWith('/fms_save_product_nutrition')) {
+          if (data?.code === 'PGRST202' || (response.status === 404 && !data?.message?.startsWith('FMS_'))) throw Error('영양정보 저장 기능의 SQL이 아직 적용되지 않았습니다. 관리자에게 확인해 주세요.');
+          if (data?.message === 'FMS_NUTRITION_REVISION_CONFLICT') throw Error('다른 화면에서 영양정보가 변경됐거나 이전 저장이 완료됐을 수 있습니다. 물품 선택에서 새로고침한 뒤 확인해 주세요.');
+          if (data?.message === 'FMS_PRODUCT_UNIT_CONFLICT') throw Error('FMS 물품의 기준단위가 변경됐습니다. 물품을 다시 선택해 주세요.');
+          if (data?.message === 'FMS_PRODUCT_NOT_FOUND') throw Error('저장할 물품을 찾지 못했습니다. 물품을 다시 선택해 주세요.');
+          throw Error('영양정보를 저장하지 못했습니다. 물품과 입력값을 확인해 주세요.');
+        }
         if (response.status === 403) throw Error('자료 조회 권한을 확인해 주세요.');
         throw Error('FMS 자료를 불러오지 못했습니다. 다시 시도해 주세요.');
       }
@@ -69,7 +77,7 @@ export function createFmsClient(onExpired: () => void) {
     return rows[0].products.map((p: any) => {
       if (!p || !['string', 'number'].includes(typeof p.id) || typeof p.name !== 'string') throw Error('FMS 물품 자료 형식을 확인해 주세요.');
       return { id: String(p.id), name: p.name, workspaceUserId: userId,
-        barcode: String(p.barcode ?? ''), category: String(p.category ?? ''), unit: String(p.unit ?? ''), brand: String(p.brand ?? '') };
+        barcode: String(p.barcode ?? ''), category: String(p.category ?? ''), unit: String(p.unit ?? ''), brand: String(p.brand ?? ''), nutritionRevision: Number.isSafeInteger(p.nutritionRevision) && p.nutritionRevision >= 0 ? p.nutritionRevision : 0 };
     });
   }
   async function loadInventory(): Promise<InventoryItem[]> {
@@ -91,7 +99,20 @@ export function createFmsClient(onExpired: () => void) {
     if (generation !== current) throw Error('다시 로그인해 주세요.');
     return readPublicFoods(rows);
   }
-  return { signIn, loadProducts, loadInventory, searchFoods, clear };
+  async function saveNutrition(food: FmsFood, nutrition: NutritionRegistration, expectedRevision: number) {
+    const jwt = await token(), current = generation;
+    if (food.workspaceUserId !== session!.user.id) throw Error('현재 계정의 물품을 다시 선택해 주세요.');
+    if (!food.unit?.trim()) throw Error('먼저 FMS에서 물품의 기준단위를 입력해 주세요.');
+    if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) throw Error('물품의 저장 상태를 다시 확인해 주세요.');
+    const reply = await request('/rest/v1/rpc/fms_save_product_nutrition', { token: jwt, body: {
+      p_product_id: food.id, p_expected_nutrition_revision: expectedRevision,
+      p_expected_unit: food.unit, p_nutrition: nutrition,
+    } });
+    if (generation !== current) throw Error('다시 로그인해 주세요.');
+    if (!reply || !Number.isSafeInteger(reply.nutrition_revision) || reply.nutrition_revision !== expectedRevision + 1) throw Error('저장 결과를 확인하지 못했습니다. 물품을 다시 선택해 확인해 주세요.');
+    return reply.nutrition_revision as number;
+  }
+  return { signIn, loadProducts, loadInventory, searchFoods, saveNutrition, clear };
 }
 
 

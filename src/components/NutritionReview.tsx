@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors } from '../theme';
 import type { OcrLine } from '../lib/ocr.types';
@@ -7,16 +7,18 @@ import { describeNutritionBasis, orderNutritionValues } from '../lib/nutritionRe
 import { makeManualNutrient } from '../lib/nutrientCatalog';
 import { NutrientPicker } from './NutrientPicker';
 import { QuantityInput, UnitPicker } from './QuantityInput';
-import { isNutritionNumber, missingRequiredNutrients } from '../lib/nutritionValidation';
+import { isNutritionNumber } from '../lib/nutritionValidation';
 import type { FmsFood } from '../lib/nutritionValidation';
+import { FmsCloudContext } from '../context/FmsCloudContext';
+import { normalizeNutrition, resolveNutritionBasis, type NormalizedNutrition, type NutritionRegistration } from '../lib/nutritionNormalization';
 
 const boundNames = { lt: '미만', lte: '이하', gt: '초과', gte: '이상' };
 
-function ValueRow({ item, id, value, locked, onChange, onRemove, onMoveUp, onMoveDown }: {
-  item: NutritionValue; id: string; value: string; locked: boolean; onChange: (value: string) => void; onRemove?: () => void; onMoveUp?: () => void; onMoveDown?: () => void;
+function ValueRow({ item, id, value, locked, operator, onOperatorChange, onChange, onRemove, onMoveUp, onMoveDown }: {
+  item: NutritionValue; operator?: NutritionValue['operator']; onOperatorChange: (operator: NutritionValue['operator']) => void; id: string; value: string; locked: boolean; onChange: (value: string) => void; onRemove?: () => void; onMoveUp?: () => void; onMoveDown?: () => void;
 }) {
   const uncertain = item.state === 'conflict' || item.alternatives.length > 0;
-  const [bound, setBound] = useState(item.operator ? boundNames[item.operator] : '');
+  const bound = operator ? boundNames[operator] : '';
   const [editingBound, setEditingBound] = useState(false);
   const unit = [item.unit, item.unitQualifier].filter(Boolean).join(' ');
   return (
@@ -27,7 +29,7 @@ function ValueRow({ item, id, value, locked, onChange, onRemove, onMoveUp, onMov
           editable={!locked} onChangeText={onChange}
           placeholderTextColor={colors.body} style={[styles.input, locked && styles.inputLocked]} />
         <Text style={styles.unit}>{unit}</Text>
-        {item.operator && <Pressable accessibilityRole="button" accessibilityLabel={`${item.name} 범위 수정`}
+        {(item.operator || operator) && <Pressable accessibilityRole="button" accessibilityLabel={`${item.name} 범위 수정`} disabled={locked}
           onPress={() => setEditingBound(true)} style={styles.bound}><Text style={styles.body}>{bound || '범위 없음'}</Text></Pressable>}
       </View>
       {onRemove && <View style={styles.addedActions}>
@@ -48,7 +50,7 @@ function ValueRow({ item, id, value, locked, onChange, onRemove, onMoveUp, onMov
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.backdrop}><View style={styles.modal} accessibilityViewIsModal>
           <Text style={styles.title}>{item.name} 범위</Text>
           {['범위 없음', '미만', '이하', '초과', '이상'].map(label => <Pressable key={label} accessibilityRole="button"
-            onPress={() => { setBound(label === '범위 없음' ? '' : label); setEditingBound(false); }} style={styles.choice}>
+            onPress={() => { onOperatorChange((Object.keys(boundNames) as Array<keyof typeof boundNames>).find(key => boundNames[key] === label)); setEditingBound(false); }} style={styles.choice}>
             <Text style={styles.body}>{label}</Text>
           </Pressable>)}
           <Pressable accessibilityRole="button" onPress={() => setEditingBound(false)} style={styles.choice}><Text style={styles.body}>닫기</Text></Pressable>
@@ -58,10 +60,10 @@ function ValueRow({ item, id, value, locked, onChange, onRemove, onMoveUp, onMov
   );
 }
 
-export function NutritionReview({ result, lines = [], entryMode = 'photo', food, onCancel }: { food?: FmsFood; result: NutritionLabelResult; lines?: OcrLine[]; entryMode?: 'photo' | 'manual' | 'reference'; onCancel?: () => void }) {
-  const [basisText, setBasisText] = useState(entryMode !== 'manual' ? describeNutritionBasis(result.basis) : '');
-  const [packageQuantity, setPackageQuantity] = useState(result.package?.quantity ?? '');
-  const [packageUnit, setPackageUnit] = useState(result.package?.unit ?? 'g');
+export function NutritionReview({ result, lines = [], entryMode = 'photo', food, onCancel, provenance, onSaved }: { onSaved?: (revision: number) => void; provenance?: NutritionRegistration['provenance']; food?: FmsFood; result: NutritionLabelResult; lines?: OcrLine[]; entryMode?: 'photo' | 'manual' | 'reference'; onCancel?: () => void }) {
+  const [basisText, setBasisText] = useState(entryMode === 'manual' ? '총 내용량당' : result.basis.type === 'total_package' && result.basis.quantity && result.basis.unit ? `${result.basis.quantity} ${result.basis.unit}당` : describeNutritionBasis(result.basis));
+  const [packageQuantity, setPackageQuantity] = useState(result.package?.quantity ?? (result.basis.type === 'total_package' ? result.basis.quantity : '') ?? '');
+  const [packageUnit, setPackageUnit] = useState(result.package?.unit ?? (result.basis.type === 'total_package' ? result.basis.unit : '') ?? 'g');
   const [editingBasis, setEditingBasis] = useState(false);
   const [draftBasis, setDraftBasis] = useState(basisText);
   const [draftQuantity, setDraftQuantity] = useState(packageQuantity);
@@ -75,17 +77,51 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food,
   const unresolved = [...result.review.unmatched, ...result.review.ambiguous];
   const originalValues = orderNutritionValues(result, lines);
   const [valueDrafts, setValueDrafts] = useState<Record<string, string>>(() => Object.fromEntries(originalValues.map(item => [item.code ?? item.name, item.state === 'conflict' || item.alternatives.length ? '' : item.value ?? ''])));
+  const [previewExpanded, setPreviewExpanded] = useState(false);
   const [noticeText, setNoticeText] = useState('');
-  function register() {
-    const missing = missingRequiredNutrients(valueDrafts);
-    const invalid = values.filter(item => { const draft = valueDrafts[item.code ?? item.name] ?? ''; return draft.trim() !== '' && !isNutritionNumber(draft); });
-    setNoticeText(missing.length ? `필수 영양성분의 숫자를 확인해 주세요: ${missing.join(', ')}. 표시가 0이면 0을 입력해 주세요.`
-      : invalid.length ? `숫자를 확인해 주세요: ${invalid.map(item => item.name).join(', ')}.`
-      : `${food ? `입력 대상: ${food.name} · 바코드 ${food.barcode || '없음'}\n` : ''}현재는 시험 단계로, 입력값은 저장되지 않습니다.`);
-    setRegistrationNotice(true);
+  const client = useContext(FmsCloudContext);
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false), mounted = useRef(true);
+  const [savedRevision, setSavedRevision] = useState(food?.nutritionRevision ?? 0);
+  const [basisConfirmed, setBasisConfirmed] = useState(entryMode !== 'photo' || (!result.basis.needsReview && !result.basis.needsUnitWeight && !result.review.notes.some(note => /여러 기준|기준량이 여러 개/.test(note))));
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [operatorDrafts, setOperatorDrafts] = useState<Record<string, NutritionValue['operator']>>(() => Object.fromEntries(originalValues.map(item => [item.code ?? item.name, item.operator])));
+  async function register() {
+    if (savingRef.current) return;
+    if (!normalized || normalizationError) { setNoticeText(normalizationError || '총 내용량과 원본 기준량을 확인해 주세요.'); setRegistrationNotice(true); return; }
+    if (!basisConfirmed) { setNoticeText('영양정보 수정에서 사용할 원본 기준과 기준량을 확인해 주세요.'); setRegistrationNotice(true); return; }
+    if (!food || !client) { setNoticeText('저장할 FMS 물품을 먼저 선택해 주세요.'); setRegistrationNotice(true); return; }
+    savingRef.current = true; setSaving(true);
+    try {
+      const payload: NutritionRegistration = { ...normalized, origin: entryMode, fmsUnit: food.unit ?? '', provenance,
+        original: entryMode === 'manual' ? undefined : { basis: result.basis, package: result.package, required: result.required, additional: result.additional } };
+      const revision = await client.saveNutrition(food, payload, savedRevision);
+      if (mounted.current) { setSavedRevision(revision); onSaved?.(revision); setNoticeText(`${food.name}의 1${food.unit || '개'} 전체 기준 영양정보를 저장했습니다.\n총 내용량 ${normalized.package.quantity} ${normalized.package.unit}`); setRegistrationNotice(true); }
+    } catch (error) {
+      if (mounted.current) { setNoticeText(error instanceof Error ? error.message : '저장 결과를 확인하지 못했습니다. 물품을 다시 선택해 확인해 주세요.'); setRegistrationNotice(true); }
+    } finally { savingRef.current = false; if (mounted.current) setSaving(false); }
   }
   const [rowOrder, setRowOrder] = useState(() => originalValues.map(item => item.code));
   const values = [...originalValues, ...manualValues].sort((a, b) => rowOrder.indexOf(a.code) - rowOrder.indexOf(b.code));
+  let normalized: NormalizedNutrition | undefined, normalizationError = '';
+  const sourceValues = values.map(item => {
+    const text = (valueDrafts[item.code ?? item.name] ?? '').trim();
+    const operator = operatorDrafts[item.code ?? item.name];
+    const valueChanged = !!touched[item.code ?? item.name] || text !== (item.value ?? '');
+    return { ...item, operator, value: text || undefined,
+      ...(valueChanged && text ? { needsReview: false, reviewReasons: [], alternatives: [] } : {}),
+      state: text ? (operator ? 'bounded' : valueChanged || item.state === 'bounded' ? (/^0*(?:\.0*)?$/.test(text) ? 'explicit_zero' : 'exact') : item.state) : (item.state === 'exact' || item.state === 'explicit_zero' || item.state === 'bounded' ? 'not_detected' : item.state),
+    } as NutritionValue;
+  });
+  try {
+    const invalid = sourceValues.find(v => v.value !== undefined && !isNutritionNumber(v.value));
+    if (invalid) throw Error(`${invalid.name}의 숫자를 확인해 주세요.`);
+    if (!sourceValues.some(v => v.value !== undefined)) throw Error('저장할 영양정보를 입력해 주세요. 빈값을 0으로 채우지 않습니다.');
+    normalized = normalizeNutrition({ package: { quantity: packageQuantity, unit: packageUnit }, basis: resolveNutritionBasis(basisText, result.basis),
+      required: sourceValues.filter(v => result.required.some(r => r.code === v.code)),
+      additional: sourceValues.filter(v => !result.required.some(r => r.code === v.code)) });
+  } catch (error) { normalizationError = error instanceof Error ? error.message : '내용량과 원본 기준을 확인해 주세요.'; }
   function moveNutrient(code: string | undefined, delta: number) {
     setRowOrder(previous => {
       const next = [...previous], index = next.indexOf(code), target = index + delta;
@@ -118,10 +154,24 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food,
     else { setEditingValues(true); editBasis(); }
   }
   return (
-    <View testID="nutrition-review" style={styles.section}>
+    <View testID="nutrition-review" pointerEvents={saving ? "none" : "auto"} style={styles.section}>
+      <View testID="nutrition-normalized-preview" style={styles.card}>
+        <Text accessibilityRole="header" style={styles.title}>저장할 영양정보 · 1{food?.unit || '개'} 전체</Text>
+        <Text style={styles.body}>총 내용량 {packageQuantity || '입력 필요'} {packageUnit}</Text>
+        {normalized ? <>
+          <Text testID="nutrition-normalization-factor" style={styles.hint}>원본 기준: {basisText} · 적용 배수: {normalized.factor}배</Text>
+          {[...normalized.required, ...(previewExpanded ? normalized.additional : [])].map((item, i) => <View key={item.code ?? i} style={styles.summary}>
+            <Text style={styles.body}>{item.name}</Text>
+            <Text testID={`normalized-value-${item.code}`} style={styles.body}>{item.value === undefined ? item.state === 'trace' ? '미량' : item.state === 'dash' ? '—' : '값 없음' : `${item.operator ? boundNames[item.operator] + ' ' : ''}${item.value} ${item.unit ?? ''}${item.unitQualifier ? ' ' + item.unitQualifier : ''}`}</Text>
+          </View>)}
+          {normalized.additional.length > 0 && <Pressable accessibilityRole="button" onPress={() => setPreviewExpanded(!previewExpanded)} style={styles.edit}><Text style={styles.editText}>{previewExpanded ? '추가 성분 접기' : `추가 성분 ${normalized.additional.length}개 환산 결과 보기`}</Text></Pressable>}
+          <Text style={styles.hint}>총 내용량이나 원본 값을 수정하면 원본 기준에서 다시 계산합니다.</Text>
+        </> : <Text testID="nutrition-normalization-error" style={styles.hint}>{normalizationError}</Text>}
+        {!basisConfirmed && <Text style={styles.hint}>사용할 원본 기준을 수정 화면에서 확인해 주세요.</Text>}
+      </View>
       <View style={styles.card}>
         {entryMode === 'photo' && <View testID="photo-fms-food-summary"><Text style={styles.body}>{food ? `${food.name} · 바코드 ${food.barcode || '없음'}` : '영양정보를 입력할 식품'}</Text></View>}
-        <Text accessibilityRole="header" style={styles.title}>{entryMode === 'photo' ? '영양정보 확인' : '영양정보 입력'}</Text>
+        <Text accessibilityRole="header" style={styles.title}>원본 영양정보{entryMode === 'photo' ? ' 확인' : ' 입력'}</Text>
         {entryMode === 'photo' ? <View style={styles.summary}>
           <View style={{ flex: 1, gap: 6 }}>
             {packageQuantity !== '' && <Text style={styles.body}>총 내용량 {packageQuantity} {packageUnit}</Text>}
@@ -131,20 +181,21 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food,
             <Text style={styles.editText}>{editingValues ? '완료' : '수정'}</Text>
           </Pressable>
         </View> : <View style={styles.manualFields}>
-          <Text style={styles.body}>총 내용량</Text>
+          <Text style={styles.body}>FMS 1{food?.unit || '개'}당 총 내용량</Text>
           <View style={styles.quantityLine}>
             <QuantityInput testID="manual-package-quantity" accessibilityLabel="총 내용량" value={packageQuantity}
               onChangeText={setPackageQuantity} style={styles.input} />
             <UnitPicker id="manual-package-unit" value={packageUnit} onChange={setPackageUnit} />
           </View>
-          <Text style={styles.body}>영양정보 기준</Text>
+          <Text style={styles.body}>입력값의 원본 기준</Text>
+          <View style={styles.basisOptions}>{[['총 내용량당', 'total'], ['100 g당', '100g'], ['100 mL당', '100ml']].map(([label, id]) => <Pressable key={id} testID={`basis-${id}`} accessibilityRole="button" onPress={() => setBasisText(label)} style={styles.choice}><Text style={styles.editText}>{label}</Text></Pressable>)}</View>
           <TextInput testID="manual-basis-text" accessibilityLabel="영양정보 기준" value={basisText} onChangeText={setBasisText}
             placeholder="예: 총 내용량당, 100 g당, 1봉(40 g)당" style={styles.basisInput} />
         </View>}
         {multipleBases && <Text style={styles.hint}>사진에 기준량이 여러 개 있습니다. 사용할 열 하나와 각 함량을 확인해 주세요.</Text>}
         {entryMode === 'photo' && !multipleBases && (result.basis.needsReview || result.basis.needsUnitWeight) && <Text style={styles.hint}>사진에 적힌 기준을 확인해 주세요.</Text>}
-        {values.map((item, i) => <ValueRow key={item.code ?? i} item={item} id={`nutrition-value-${item.code}`} value={valueDrafts[item.code ?? item.name] ?? ''} locked={valuesLocked}
-          onChange={value => setValueDrafts(previous => ({ ...previous, [item.code ?? item.name]: value }))}
+        {values.map((item, i) => <ValueRow key={item.code ?? i} item={item} id={`nutrition-value-${item.code}`} value={valueDrafts[item.code ?? item.name] ?? ''} locked={valuesLocked} operator={operatorDrafts[item.code ?? item.name]} onOperatorChange={operator => setOperatorDrafts(previous => ({ ...previous, [item.code ?? item.name]: operator }))}
+          onChange={value => { setTouched(previous => ({ ...previous, [item.code ?? item.name]: true })); setValueDrafts(previous => ({ ...previous, [item.code ?? item.name]: value })); }}
           onRemove={manualValues.some(value => value.code === item.code) ? () => removeNutrient(item.code) : undefined}
           onMoveUp={i > 0 ? () => moveNutrient(item.code, -1) : undefined}
           onMoveDown={i < values.length - 1 ? () => moveNutrient(item.code, 1) : undefined} />)}
@@ -156,34 +207,34 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food,
       </View>
       <View style={styles.registration}>
         <Pressable testID="register-nutrition" accessibilityRole="button" accessibilityLabel="등록"
-          onPress={register} style={({ pressed }) => [styles.register, pressed && { opacity: 0.8 }]}>
-          <Text style={styles.registerText}>등록</Text>
+          disabled={saving} onPress={register} style={({ pressed }) => [styles.register, pressed && { opacity: 0.8 }]}>
+          <Text style={styles.registerText}>{saving ? '저장 중…' : '등록'}</Text>
         </Pressable>
         {onCancel && <Pressable testID="cancel-nutrition" accessibilityRole="button" accessibilityLabel="취소"
           onPress={onCancel} style={({ pressed }) => [styles.cancel, pressed && { opacity: 0.8 }]}>
           <Text style={styles.cancelText}>취소</Text>
         </Pressable>}
-        <Text style={styles.registrationHint}>{entryMode === 'photo' ? '사진과 영양정보가 일치하는지 확인한 후 등록해 주세요.' : '선택한 FMS 식품·기준량·영양정보를 확인한 후 등록해 주세요.'}</Text>
+        <Text style={styles.registrationHint}>선택한 물품의 1{food?.unit || '개'} 전체 기준 환산 결과를 확인한 후 등록해 주세요.</Text>
       </View>
       {pickerOpen && <NutrientPicker selectedCodes={selectedCodes} onSelect={addNutrient} onClose={() => setPickerOpen(false)} />}
       <Modal visible={editingBasis} transparent animationType="fade" onRequestClose={() => setEditingBasis(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.backdrop}><View style={styles.modal} accessibilityViewIsModal testID="nutrition-basis-editor">
           <Text accessibilityRole="header" style={styles.title}>영양정보 기준 수정</Text>
-          <Text style={styles.body}>총 내용량</Text>
+          <Text style={styles.body}>FMS 1{food?.unit || '개'}당 총 내용량</Text>
           <View style={styles.quantityLine}>
             <QuantityInput testID="nutrition-package-quantity" accessibilityLabel="총 내용량" value={draftQuantity}
               onChangeText={setDraftQuantity} style={styles.input} />
             <UnitPicker id="nutrition-package-unit" value={draftUnit} onChange={setDraftUnit} />
           </View>
-          <Text style={styles.body}>영양정보 기준</Text>
+          <Text style={styles.body}>입력값의 원본 기준</Text>
           <TextInput testID="nutrition-basis-text" accessibilityLabel="영양정보 기준" value={draftBasis} onChangeText={setDraftBasis}
             placeholder="예: 총 내용량당, 100 g당, 1봉(40 g)당" style={styles.basisInput} />
-          <Text style={styles.hint}>사진에 적힌 기준을 입력해 주세요. 아래 성분값은 자동 환산되지 않습니다.</Text>
+          <Text style={styles.hint}>아래 입력값은 원본 기준입니다. 저장할 값은 총 내용량에 맞춰 따로 환산됩니다.</Text>
           <View style={styles.summary}>
             <Pressable accessibilityRole="button" accessibilityLabel="기준 수정 취소" onPress={() => setEditingBasis(false)} style={styles.edit}><Text style={styles.editText}>취소</Text></Pressable>
             <Pressable testID="nutrition-basis-apply" accessibilityRole="button" accessibilityLabel="기준 수정 적용"
               disabled={!draftBasis.trim() || !draftUnit.trim() || (!!draftQuantity && (!isNutritionNumber(draftQuantity) || Number(draftQuantity) <= 0))}
-              onPress={() => { setBasisText(draftBasis.trim()); setPackageQuantity(draftQuantity); setPackageUnit(draftUnit.trim()); setEditingBasis(false); }} style={styles.edit}>
+              onPress={() => { setBasisText(draftBasis.trim()); setPackageQuantity(draftQuantity); setPackageUnit(draftUnit.trim()); setBasisConfirmed(true); setEditingBasis(false); }} style={styles.edit}>
               <Text style={styles.editText}>적용</Text>
             </Pressable>
           </View>
@@ -203,6 +254,7 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food,
 const styles = StyleSheet.create({
   section: { gap: 20 },
   manualFields: { gap: 8 },
+  basisOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   card: { borderRadius: 16, borderWidth: 1, borderColor: colors.cardBorder, backgroundColor: colors.cardTop, padding: 18, gap: 12 },
   title: { color: colors.text, fontSize: 21, fontWeight: '700' },
   subtitle: { color: colors.text, fontSize: 18, fontWeight: '700', marginTop: 8 },

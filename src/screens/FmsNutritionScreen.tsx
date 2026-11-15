@@ -51,7 +51,7 @@ export function FmsNutritionScreen({ onBack }: { onBack: () => void }) {
   </SafeAreaView>;
   if (!food) return selector;
   return <View style={styles.screen}>
-    <NutritionRegistrationScreen food={food} onChangeFood={() => { setChoosing(true); void load(); }} onBack={() => { setFood(undefined); setChoosing(true); void load(); }} />
+    <NutritionRegistrationScreen onNutritionSaved={revision => { const id = food.id; setFood(current => current?.id === id ? { ...current, nutritionRevision: revision } : current); setProducts(current => current.map(p => p.id === id ? { ...p, nutritionRevision: revision } : p)); }} key={`${food.workspaceUserId}:${food.id}`} food={food} onChangeFood={() => { setChoosing(true); void load(); }} onBack={() => { setFood(undefined); setChoosing(true); void load(); }} />
     <Modal visible={choosing} animationType="slide" onRequestClose={closePicker}>
       <SafeAreaProvider style={styles.screen}>{selector}</SafeAreaProvider>
     </Modal>
@@ -70,3 +70,4 @@ const styles = StyleSheet.create({
   product: { padding: 16, borderWidth: 1, borderColor: colors.cardBorder, backgroundColor: colors.cardTop, borderRadius: 14, gap: 6 },
   name: { color: colors.text, fontSize: 18, fontWeight: '700' },
 });
+

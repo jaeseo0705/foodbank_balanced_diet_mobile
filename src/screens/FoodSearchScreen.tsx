@@ -9,7 +9,7 @@ import { publicFoodCells, publicFoodId, publicFoodNutrition, type PublicFood } f
 import type { FmsFood } from '../lib/nutritionValidation';
 import { colors } from '../theme';
 
-export function FoodSearchScreen({ onBack, onManual, food }: { onBack: () => void; onManual: () => void; food?: FmsFood }) {
+export function FoodSearchScreen({ onBack, onManual, food, onSaved }: { onSaved?: (revision: number) => void; onBack: () => void; onManual: () => void; food?: FmsFood }) {
   const client = useFmsCloud();
   const [query, setQuery] = useState('');
   const [searched, setSearched] = useState('');
@@ -75,7 +75,8 @@ export function FoodSearchScreen({ onBack, onManual, food }: { onBack: () => voi
       {showRaw && <View testID="public-food-raw" style={styles.source}>{publicFoodCells(selected).map(cell => <View key={cell.column} style={styles.rawRow}>
         <Text style={styles.body}>{cell.label}</Text><Text selectable style={styles.body}>{cell.value === '' ? '빈값' : cell.value}</Text>
       </View>)}</View>}
-      <NutritionReview key={publicFoodId(selected)} food={food} result={publicFoodNutrition(selected)} entryMode="reference" onCancel={back} />
+      <NutritionReview onSaved={onSaved} key={publicFoodId(selected)} food={food} result={publicFoodNutrition(selected)} entryMode="reference" provenance={{ sourceKey: selected.source_key, recordKey: selected.record_key, name: selected.name,
+        title: selected.title, publisher: selected.publisher, version: selected.version, basis: selected.basis, headers: selected.headers, rawValues: selected.raw_values }} onCancel={back} />
     </ScrollView>
   </SafeAreaView>;
   return <SafeAreaView testID="section-screen" style={styles.screen}>

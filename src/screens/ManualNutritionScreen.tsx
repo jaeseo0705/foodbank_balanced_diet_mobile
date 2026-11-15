@@ -8,7 +8,7 @@ import { createManualNutrition } from '../lib/manualNutrition';
 import type { FmsFood } from '../lib/nutritionValidation';
 import { colors } from '../theme';
 
-export function ManualNutritionScreen({ onBack, food, onChangeFood }: { onBack: () => void; food?: FmsFood; onChangeFood?: () => void }) {
+export function ManualNutritionScreen({ onBack, food, onChangeFood, onSaved }: { onSaved?: (revision: number) => void; onBack: () => void; food?: FmsFood; onChangeFood?: () => void }) {
   const [result] = useState(createManualNutrition);
   return (
     <SafeAreaView testID="section-screen" style={styles.screen}>
@@ -19,7 +19,7 @@ export function ManualNutritionScreen({ onBack, food, onChangeFood }: { onBack: 
             <Text accessibilityRole="header" style={styles.title}>직접 입력</Text><View style={styles.back} />
           </View>
           {food && <FmsFoodSummary food={food} onChange={onChangeFood} />}
-          <NutritionReview food={food} result={result} entryMode="manual" onCancel={onBack} />
+          <NutritionReview onSaved={onSaved} food={food} result={result} entryMode="manual" onCancel={onBack} />
         </View>
       </ScrollView>
     </SafeAreaView>
