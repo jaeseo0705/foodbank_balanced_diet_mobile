@@ -10,7 +10,7 @@ export const tasks: ReadonlyArray<{ id: TaskId; label: string }> = [
   { id: 'nutrition-registration', label: '영양성분 등록' },
   { id: 'inventory', label: '재고 현황' },
   { id: 'distribution', label: '배분 추천' },
-  { id: 'nutrition-calculation', label: '영양 계산' },
+  { id: 'nutrition-calculation', label: '맞춤 식단' },
 ];
 
 type Props = {

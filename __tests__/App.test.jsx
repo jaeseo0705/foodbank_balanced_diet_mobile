@@ -115,7 +115,7 @@ test.each([
   ['nutrition-registration', '영양성분 등록'],
   ['inventory', '재고 현황'],
   ['distribution', '배분 추천'],
-  ['nutrition-calculation', '영양 계산'],
+  ['nutrition-calculation', '맞춤 식단'],
 ])('task %s opens its section and returns home', async (id, label) => {
   await login();
   expect(byId('task-' + id).props.accessibilityLabel).toBe(label);

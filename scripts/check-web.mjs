@@ -174,7 +174,7 @@ try {
   await page.screenshot({ path: 'qa-output/inventory-phone.png', fullPage: true });
   await page.getByRole('button', { name: '뒤로', exact: true }).click();
   await checkRegistration('phone', true);
-  for (const label of ['영양성분 등록', '재고 현황', '배분 추천', '영양 계산']) {
+  for (const label of ['영양성분 등록', '재고 현황', '배분 추천', '맞춤 식단']) {
     await page.getByRole('button', { name: label, exact: true }).click();
     await page.getByRole('heading', { name: label === '영양성분 등록' ? '물품 선택' : label, exact: true }).waitFor();
     await page.getByRole('button', { name: '뒤로', exact: true }).click();
@@ -197,7 +197,7 @@ try {
     await checkRegistration(name);
     await page.getByTestId('task-nutrition-calculation').scrollIntoViewIfNeeded();
     await page.getByTestId('task-nutrition-calculation').click();
-    await page.getByRole('heading', { name: '영양 계산', exact: true }).waitFor();
+    await page.getByRole('heading', { name: '맞춤 식단', exact: true }).waitFor();
     await page.getByRole('button', { name: '뒤로', exact: true }).click();
     await page.screenshot({ path: `qa-output/task-selection-${name}.png`, fullPage: true });
   }
