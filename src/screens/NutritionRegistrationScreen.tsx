@@ -18,7 +18,7 @@ import { FoodSearchScreen } from './FoodSearchScreen';
 const methods: ReadonlyArray<{ id: RegistrationMethod; label: string }> = [
   { id: 'camera', label: '영양성분표 촬영' },
   { id: 'photo', label: '사진 불러오기' },
-  { id: 'search', label: '식품 검색' },
+  { id: 'search', label: '유사 식품 검색' },
   { id: 'manual', label: '직접 입력' },
 ];
 type Notice = { title: string; message: string; settings?: boolean };
@@ -157,8 +157,8 @@ export function NutritionRegistrationScreen({ onBack, food, onChangeFood }: { on
 
   const availableHeight = height - insets.top - insets.bottom;
   const contentWidth = Math.min(width - insets.left - insets.right, 460);
-  const artworkSize = Math.min(250, contentWidth * 0.68);
-  const heroHeight = Math.max(210, Math.min(300, availableHeight * 0.38));
+  const artworkSize = Math.min(190, contentWidth * 0.52);
+  const heroHeight = Math.max(160, Math.min(220, availableHeight * 0.25));
 
   if (route === 'manual' || route === 'reference') return <ManualNutritionScreen onChangeFood={onChangeFood} food={food} reference={route === 'reference'} onBack={() => setRoute(route === 'reference' ? 'search' : 'methods')} />;
   if (route === 'search') return <FoodSearchScreen onBack={() => setRoute('methods')} onManual={() => setRoute('reference')} />;
@@ -245,6 +245,25 @@ export function NutritionRegistrationScreen({ onBack, food, onChangeFood }: { on
           {ocrResult?.nutrition == null && <View style={styles.actions}>
             {methods.map((method, index) => {
               const primary = index === 0 && !photo;
+              if (method.id === 'search' || method.id === 'manual') return (
+                <Pressable
+                  key={method.id}
+                  testID={`registration-${method.id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={method.id === 'search' ? '유사 식품 검색, 영양성분표가 없을 때' : method.label}
+                  disabled={busy !== null}
+                  accessibilityState={{ disabled: busy !== null }}
+                  onPress={() => chooseMethod(method.id)}
+                  style={({ pressed }) => [styles.secondaryAction, method.id === 'manual' && styles.secondaryDivider, pressed && styles.pressed]}
+                >
+                  <View style={styles.secondaryIcon}><RegistrationActionIcon method={method.id} color={colors.primary} /></View>
+                  <View style={styles.secondaryLabels}>
+                    <Text style={styles.secondaryText}>{method.label}</Text>
+                    {method.id === 'search' && <View style={styles.searchBadge}><Text style={styles.searchBadgeText}>영양성분표 없음</Text></View>}
+                  </View>
+                  <Text accessible={false} style={styles.chevron}>›</Text>
+                </Pressable>
+              );
               return (
                 <Pressable
                   key={method.id}
@@ -304,6 +323,14 @@ const styles = StyleSheet.create({
   title: { flex: 1, textAlign: 'center', fontSize: 23, fontWeight: '700', color: colors.text },
   hero: { alignItems: 'center', justifyContent: 'center' },
   actions: { gap: 18 },
+  secondaryAction: { flexDirection: 'row', alignItems: 'center', minHeight: 60, paddingHorizontal: 8, paddingVertical: 12, gap: 12 },
+  secondaryDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.cardBorder, marginTop: -18 },
+  secondaryIcon: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center', transform: [{ scale: 0.8 }] },
+  secondaryLabels: { flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
+  secondaryText: { color: colors.text, fontSize: 17, lineHeight: 25, fontWeight: '600', flexShrink: 1 },
+  searchBadge: { backgroundColor: colors.avatarBackground, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 },
+  searchBadgeText: { color: colors.primary, fontSize: 11, lineHeight: 16 },
+  chevron: { color: colors.body, fontSize: 27, fontWeight: '300' },
   ocrSection: { gap: 16, marginBottom: 20 },
   readButton: { minHeight: 56, borderRadius: 16, backgroundColor: colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, padding: 14 },
   readButtonText: { color: colors.background, fontSize: 19, fontWeight: '700' },
