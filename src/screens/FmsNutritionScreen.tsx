@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, BackHandler, FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { BackIcon } from '../components/TaskIcons';
 import { useFmsCloud } from '../context/FmsCloudContext';
 import type { FmsFood } from '../lib/nutritionValidation';
@@ -46,14 +46,15 @@ export function FmsNutritionScreen({ onBack }: { onBack: () => void }) {
             <Text style={styles.name}>{item.name}</Text>
             <Text style={styles.body}>바코드 {item.barcode || '없음'}</Text>
             <Text style={styles.body}>{[item.category, item.unit, item.brand].filter(Boolean).join(' · ')}</Text>
-            <Text style={styles.meta}>물품코드 {item.id}</Text>
           </Pressable>} />}
     </View>
   </SafeAreaView>;
   if (!food) return selector;
   return <View style={styles.screen}>
     <NutritionRegistrationScreen food={food} onChangeFood={() => { setChoosing(true); void load(); }} onBack={() => { setFood(undefined); setChoosing(true); void load(); }} />
-    <Modal visible={choosing} animationType="slide" onRequestClose={closePicker}>{selector}</Modal>
+    <Modal visible={choosing} animationType="slide" onRequestClose={closePicker}>
+      <SafeAreaProvider style={styles.screen}>{selector}</SafeAreaProvider>
+    </Modal>
   </View>;
 }
 const styles = StyleSheet.create({
@@ -68,5 +69,4 @@ const styles = StyleSheet.create({
   list: { gap: 12, paddingBottom: 32 },
   product: { padding: 16, borderWidth: 1, borderColor: colors.cardBorder, backgroundColor: colors.cardTop, borderRadius: 14, gap: 6 },
   name: { color: colors.text, fontSize: 18, fontWeight: '700' },
-  meta: { color: colors.body, fontSize: 13 },
 });
