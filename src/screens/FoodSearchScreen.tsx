@@ -2,10 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, BackHandler, FlatList, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackIcon } from '../components/TaskIcons';
-import { FmsFoodSummary } from '../components/FmsFoodSummary';
 import { NutritionReview } from '../components/NutritionReview';
 import { useFmsCloud } from '../context/FmsCloudContext';
-import { publicFoodCells, publicFoodId, publicFoodNutrition, type PublicFood } from '../lib/publicFood';
+import { publicFoodId, publicFoodNutrition, type PublicFood } from '../lib/publicFood';
 import type { FmsFood } from '../lib/nutritionValidation';
 import { colors } from '../theme';
 
@@ -16,12 +15,12 @@ export function FoodSearchScreen({ onBack, onManual, food, onSaved }: { onSaved?
   const [rows, setRows] = useState<PublicFood[]>([]);
   const [selected, setSelected] = useState<PublicFood>();
   const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false), [more, setMore] = useState(false), [showRaw, setShowRaw] = useState(false);
+  const [busy, setBusy] = useState(false), [more, setMore] = useState(false);
   const sequence = useRef(0), offset = useRef(0), loading = useRef(false);
   useEffect(() => () => { sequence.current++; }, []);
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (selected) { setSelected(undefined); setShowRaw(false); } else onBack();
+      if (selected) { setSelected(undefined); } else onBack();
       return true;
     });
     return () => sub.remove();
@@ -52,7 +51,7 @@ export function FoodSearchScreen({ onBack, onManual, food, onSaved }: { onSaved?
       if (current === sequence.current) { loading.current = false; setBusy(false); }
     }
   }
-  const back = () => { if (selected) { setSelected(undefined); setShowRaw(false); } else onBack(); };
+  const back = () => { if (selected) { setSelected(undefined); } else onBack(); };
   const header = <View style={styles.header}>
     <Pressable testID="back-button" accessibilityRole="button" accessibilityLabel="뒤로" onPress={back} style={styles.back}><BackIcon /></Pressable>
     <Text accessibilityRole="header" style={styles.title}>{selected ? '영양정보 확인' : '유사 식품 검색'}</Text><View style={styles.back} />
@@ -60,21 +59,6 @@ export function FoodSearchScreen({ onBack, onManual, food, onSaved }: { onSaved?
   if (selected) return <SafeAreaView testID="section-screen" style={styles.screen}>
     <ScrollView testID="food-search-detail" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets contentContainerStyle={styles.detail}>
       {header}
-      {food && <FmsFoodSummary food={food} />}
-      <View testID="public-food-attribution" style={styles.source}>
-        <Text style={styles.name}>{selected.name}</Text>
-        {!!selected.manufacturer && <Text style={styles.body}>{selected.manufacturer}</Text>}
-        <Text style={styles.body}>{[selected.category, selected.basis && `기준량 ${selected.basis}`].filter(Boolean).join(' · ')}</Text>
-        <Text style={styles.body}>출처: {selected.publisher} · {selected.title}</Text>
-        <Text style={styles.body}>자료 버전: {selected.version}</Text>
-        <Text style={styles.note}>유사 식품의 참고값입니다. 선택한 물품의 종류·조리 상태·기준량을 확인해 주세요. 실제 제품의 함량과 다를 수 있습니다.</Text>
-      </View>
-      <Pressable testID="public-food-raw-toggle" accessibilityRole="button" accessibilityState={{ expanded: showRaw }} onPress={() => setShowRaw(!showRaw)} style={styles.linkButton}>
-        <Text style={styles.link}>{showRaw ? '원본 항목 접기' : '원본 전체 항목 보기'}</Text>
-      </Pressable>
-      {showRaw && <View testID="public-food-raw" style={styles.source}>{publicFoodCells(selected).map(cell => <View key={cell.column} style={styles.rawRow}>
-        <Text style={styles.body}>{cell.label}</Text><Text selectable style={styles.body}>{cell.value === '' ? '빈값' : cell.value}</Text>
-      </View>)}</View>}
       <NutritionReview onSaved={onSaved} key={publicFoodId(selected)} food={food} result={publicFoodNutrition(selected)} entryMode="reference" provenance={{ sourceKey: selected.source_key, recordKey: selected.record_key, name: selected.name,
         title: selected.title, publisher: selected.publisher, version: selected.version, basis: selected.basis, headers: selected.headers, rawValues: selected.raw_values }} onCancel={back} />
     </ScrollView>
@@ -91,7 +75,7 @@ export function FoodSearchScreen({ onBack, onManual, food, onSaved }: { onSaved?
       {busy && <ActivityIndicator accessibilityLabel="식품 검색 중" color={colors.primary} />}
       <FlatList data={rows} keyExtractor={publicFoodId} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.list}
         ListEmptyComponent={!busy && !error ? <Text testID="public-food-empty" style={styles.note}>{searched ? '검색 결과가 없습니다. 다른 식품명으로 검색해 주세요.' : '식품명을 입력하고 검색해 주세요.'}</Text> : null}
-        renderItem={({ item }) => <Pressable testID={`public-food-${publicFoodId(item)}`} accessibilityRole="button" accessibilityLabel={`${item.name}, ${item.title}, 선택`} onPress={() => { setSelected(item); setShowRaw(false); }} style={styles.result}>
+        renderItem={({ item }) => <Pressable testID={`public-food-${publicFoodId(item)}`} accessibilityRole="button" accessibilityLabel={`${item.name}, ${item.title}, 선택`} onPress={() => { setSelected(item); }} style={styles.result}>
           <Text style={styles.name}>{item.name}</Text>
           {!!item.manufacturer && <Text style={styles.body}>{item.manufacturer}</Text>}
           <Text style={styles.body}>{[item.category, item.basis && `기준량 ${item.basis}`].filter(Boolean).join(' · ')}</Text>
@@ -119,9 +103,7 @@ const styles = StyleSheet.create({
   name: { color: colors.text, fontSize: 18, fontWeight: '700', lineHeight: 26 },
   body: { color: colors.text, fontSize: 15, lineHeight: 24, flexShrink: 1 },
   note: { color: colors.body, fontSize: 13, lineHeight: 22 },
-  source: { backgroundColor: colors.cardTop, borderRadius: 14, padding: 16, gap: 8 },
   linkButton: { minHeight: 44, paddingVertical: 12, justifyContent: 'center' },
   link: { color: colors.primary, fontSize: 16, fontWeight: '600' },
   manual: { borderTopWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder, minHeight: 54, justifyContent: 'center', marginBottom: 12 },
-  rawRow: { borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder, paddingVertical: 8, gap: 4 },
 });

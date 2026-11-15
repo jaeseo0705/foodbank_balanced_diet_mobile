@@ -10,7 +10,7 @@ import { QuantityInput, UnitPicker } from './QuantityInput';
 import { isNutritionNumber } from '../lib/nutritionValidation';
 import type { FmsFood } from '../lib/nutritionValidation';
 import { FmsCloudContext } from '../context/FmsCloudContext';
-import { normalizeNutrition, resolveNutritionBasis, type NormalizedNutrition, type NutritionRegistration } from '../lib/nutritionNormalization';
+import { prepareNutritionRegistration, resolveNutritionBasis, type NormalizedNutrition, type NutritionRegistration } from '../lib/nutritionNormalization';
 
 const boundNames = { lt: '미만', lte: '이하', gt: '초과', gte: '이상' };
 
@@ -61,7 +61,7 @@ function ValueRow({ item, id, value, locked, operator, onOperatorChange, onChang
 }
 
 export function NutritionReview({ result, lines = [], entryMode = 'photo', food, onCancel, provenance, onSaved }: { onSaved?: (revision: number) => void; provenance?: NutritionRegistration['provenance']; food?: FmsFood; result: NutritionLabelResult; lines?: OcrLine[]; entryMode?: 'photo' | 'manual' | 'reference'; onCancel?: () => void }) {
-  const [basisText, setBasisText] = useState(entryMode === 'manual' ? '총 내용량당' : result.basis.type === 'total_package' && result.basis.quantity && result.basis.unit ? `${result.basis.quantity} ${result.basis.unit}당` : describeNutritionBasis(result.basis));
+  const [basisText, setBasisText] = useState(entryMode === 'manual' ? '총 내용량당' : describeNutritionBasis(result.basis));
   const [packageQuantity, setPackageQuantity] = useState(result.package?.quantity ?? (result.basis.type === 'total_package' ? result.basis.quantity : '') ?? '');
   const [packageUnit, setPackageUnit] = useState(result.package?.unit ?? (result.basis.type === 'total_package' ? result.basis.unit : '') ?? 'g');
   const [editingBasis, setEditingBasis] = useState(false);
@@ -71,7 +71,7 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food,
   const [registrationNotice, setRegistrationNotice] = useState(false);
   // Photo results are read-only until the user presses 수정; manual entry starts from empty fields, so it stays editable.
   const [editingValues, setEditingValues] = useState(false);
-  const valuesLocked = entryMode === 'photo' && !editingValues;
+  const valuesLocked = entryMode === 'reference' || (entryMode === 'photo' && !editingValues);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [manualValues, setManualValues] = useState<NutritionValue[]>([]);
   const unresolved = [...result.review.unmatched, ...result.review.ambiguous];
@@ -94,10 +94,10 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food,
     if (!food || !client) { setNoticeText('저장할 FMS 물품을 먼저 선택해 주세요.'); setRegistrationNotice(true); return; }
     savingRef.current = true; setSaving(true);
     try {
-      const payload: NutritionRegistration = { ...normalized, origin: entryMode, fmsUnit: food.unit ?? '', provenance,
+      const payload: NutritionRegistration = { ...normalized, valueBasis: entryMode === 'reference' ? 'fms_unit' : 'label', origin: entryMode, fmsUnit: food.unit ?? '', provenance,
         original: entryMode === 'manual' ? undefined : { basis: result.basis, package: result.package, required: result.required, additional: result.additional } };
       const revision = await client.saveNutrition(food, payload, savedRevision);
-      if (mounted.current) { setSavedRevision(revision); onSaved?.(revision); setNoticeText(`${food.name}의 1${food.unit || '개'} 전체 기준 영양정보를 저장했습니다.\n총 내용량 ${normalized.package.quantity} ${normalized.package.unit}`); setRegistrationNotice(true); }
+      if (mounted.current) { setSavedRevision(revision); onSaved?.(revision); setNoticeText(entryMode === 'reference' ? `${food.name}의 1${food.unit || '개'} 전체 기준 영양정보를 저장했습니다.` : `${food.name}의 영양성분표 기준과 함량을 그대로 저장했습니다.`); setRegistrationNotice(true); }
     } catch (error) {
       if (mounted.current) { setNoticeText(error instanceof Error ? error.message : '저장 결과를 확인하지 못했습니다. 물품을 다시 선택해 확인해 주세요.'); setRegistrationNotice(true); }
     } finally { savingRef.current = false; if (mounted.current) setSaving(false); }
@@ -118,9 +118,9 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food,
     const invalid = sourceValues.find(v => v.value !== undefined && !isNutritionNumber(v.value));
     if (invalid) throw Error(`${invalid.name}의 숫자를 확인해 주세요.`);
     if (!sourceValues.some(v => v.value !== undefined)) throw Error('저장할 영양정보를 입력해 주세요. 빈값을 0으로 채우지 않습니다.');
-    normalized = normalizeNutrition({ package: { quantity: packageQuantity, unit: packageUnit }, basis: resolveNutritionBasis(basisText, result.basis),
+    normalized = prepareNutritionRegistration({ package: { quantity: packageQuantity, unit: packageUnit }, basis: resolveNutritionBasis(basisText, result.basis),
       required: sourceValues.filter(v => result.required.some(r => r.code === v.code)),
-      additional: sourceValues.filter(v => !result.required.some(r => r.code === v.code)) });
+      additional: sourceValues.filter(v => !result.required.some(r => r.code === v.code)) }, entryMode);
   } catch (error) { normalizationError = error instanceof Error ? error.message : '내용량과 원본 기준을 확인해 주세요.'; }
   function moveNutrient(code: string | undefined, delta: number) {
     setRowOrder(previous => {
@@ -155,23 +155,9 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food,
   }
   return (
     <View testID="nutrition-review" pointerEvents={saving ? "none" : "auto"} style={styles.section}>
-      <View testID="nutrition-normalized-preview" style={styles.card}>
-        <Text accessibilityRole="header" style={styles.title}>저장할 영양정보 · 1{food?.unit || '개'} 전체</Text>
-        <Text style={styles.body}>총 내용량 {packageQuantity || '입력 필요'} {packageUnit}</Text>
-        {normalized ? <>
-          <Text testID="nutrition-normalization-factor" style={styles.hint}>원본 기준: {basisText} · 적용 배수: {normalized.factor}배</Text>
-          {[...normalized.required, ...(previewExpanded ? normalized.additional : [])].map((item, i) => <View key={item.code ?? i} style={styles.summary}>
-            <Text style={styles.body}>{item.name}</Text>
-            <Text testID={`normalized-value-${item.code}`} style={styles.body}>{item.value === undefined ? item.state === 'trace' ? '미량' : item.state === 'dash' ? '—' : '값 없음' : `${item.operator ? boundNames[item.operator] + ' ' : ''}${item.value} ${item.unit ?? ''}${item.unitQualifier ? ' ' + item.unitQualifier : ''}`}</Text>
-          </View>)}
-          {normalized.additional.length > 0 && <Pressable accessibilityRole="button" onPress={() => setPreviewExpanded(!previewExpanded)} style={styles.edit}><Text style={styles.editText}>{previewExpanded ? '추가 성분 접기' : `추가 성분 ${normalized.additional.length}개 환산 결과 보기`}</Text></Pressable>}
-          <Text style={styles.hint}>총 내용량이나 원본 값을 수정하면 원본 기준에서 다시 계산합니다.</Text>
-        </> : <Text testID="nutrition-normalization-error" style={styles.hint}>{normalizationError}</Text>}
-        {!basisConfirmed && <Text style={styles.hint}>사용할 원본 기준을 수정 화면에서 확인해 주세요.</Text>}
-      </View>
-      <View style={styles.card}>
-        {entryMode === 'photo' && <View testID="photo-fms-food-summary"><Text style={styles.body}>{food ? `${food.name} · 바코드 ${food.barcode || '없음'}` : '영양정보를 입력할 식품'}</Text></View>}
-        <Text accessibilityRole="header" style={styles.title}>원본 영양정보{entryMode === 'photo' ? ' 확인' : ' 입력'}</Text>
+      <View testID="nutrition-info-card" style={styles.card}>
+        {entryMode !== 'manual' && <View testID="photo-fms-food-summary"><Text style={styles.body}>{food ? `${food.name} · 바코드 ${food.barcode || '없음'}` : '영양정보를 입력할 식품'}</Text></View>}
+        <Text accessibilityRole="header" style={styles.title}>영양정보{entryMode === 'manual' ? ' 입력' : ' 확인'}</Text>
         {entryMode === 'photo' ? <View style={styles.summary}>
           <View style={{ flex: 1, gap: 6 }}>
             {packageQuantity !== '' && <Text style={styles.body}>총 내용량 {packageQuantity} {packageUnit}</Text>}
@@ -187,21 +173,29 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food,
               onChangeText={setPackageQuantity} style={styles.input} />
             <UnitPicker id="manual-package-unit" value={packageUnit} onChange={setPackageUnit} />
           </View>
-          <Text style={styles.body}>입력값의 원본 기준</Text>
+          {entryMode !== 'reference' && <><Text style={styles.body}>영양정보 기준</Text>
           <View style={styles.basisOptions}>{[['총 내용량당', 'total'], ['100 g당', '100g'], ['100 mL당', '100ml']].map(([label, id]) => <Pressable key={id} testID={`basis-${id}`} accessibilityRole="button" onPress={() => setBasisText(label)} style={styles.choice}><Text style={styles.editText}>{label}</Text></Pressable>)}</View>
           <TextInput testID="manual-basis-text" accessibilityLabel="영양정보 기준" value={basisText} onChangeText={setBasisText}
-            placeholder="예: 총 내용량당, 100 g당, 1봉(40 g)당" style={styles.basisInput} />
+            placeholder="예: 총 내용량당, 100 g당, 1봉(40 g)당" style={styles.basisInput} /></>}
         </View>}
         {multipleBases && <Text style={styles.hint}>사진에 기준량이 여러 개 있습니다. 사용할 열 하나와 각 함량을 확인해 주세요.</Text>}
         {entryMode === 'photo' && !multipleBases && (result.basis.needsReview || result.basis.needsUnitWeight) && <Text style={styles.hint}>사진에 적힌 기준을 확인해 주세요.</Text>}
-        {values.map((item, i) => <ValueRow key={item.code ?? i} item={item} id={`nutrition-value-${item.code}`} value={valueDrafts[item.code ?? item.name] ?? ''} locked={valuesLocked} operator={operatorDrafts[item.code ?? item.name]} onOperatorChange={operator => setOperatorDrafts(previous => ({ ...previous, [item.code ?? item.name]: operator }))}
+        {entryMode === 'reference' && normalized && normalized.factor !== '1' && <Text style={styles.hint}>{basisText} 값을 물품 1{food?.unit || '개'}의 총 내용량 기준으로 환산했습니다.</Text>}
+        {normalizationError !== '' && <Text testID="nutrition-normalization-error" style={styles.hint}>{normalizationError}</Text>}
+        {(entryMode === 'reference' ? normalized ? [...normalized.required, ...(previewExpanded ? normalized.additional : [])] : values.map(v => ({ ...v, value: undefined })) : values).map((item, i) => <ValueRow key={item.code ?? i} item={item} id={`nutrition-value-${item.code}`} value={entryMode === 'reference' ? item.value ?? '' : valueDrafts[item.code ?? item.name] ?? ''} locked={valuesLocked}
+          operator={entryMode === 'reference' ? item.operator : operatorDrafts[item.code ?? item.name]} onOperatorChange={operator => setOperatorDrafts(previous => ({ ...previous, [item.code ?? item.name]: operator }))}
           onChange={value => { setTouched(previous => ({ ...previous, [item.code ?? item.name]: true })); setValueDrafts(previous => ({ ...previous, [item.code ?? item.name]: value })); }}
-          onRemove={manualValues.some(value => value.code === item.code) ? () => removeNutrient(item.code) : undefined}
+          onRemove={entryMode !== 'reference' && manualValues.some(value => value.code === item.code) ? () => removeNutrient(item.code) : undefined}
           onMoveUp={i > 0 ? () => moveNutrient(item.code, -1) : undefined}
           onMoveDown={i < values.length - 1 ? () => moveNutrient(item.code, 1) : undefined} />)}
-        <Pressable testID="add-nutrient" accessibilityRole="button" accessibilityLabel="영양성분 추가" onPress={() => setPickerOpen(true)} style={styles.addNutrient}>
+        {entryMode === 'reference' && normalized && normalized.additional.length > 0 && <Pressable accessibilityRole="button" onPress={() => setPreviewExpanded(!previewExpanded)} style={styles.edit}><Text style={styles.editText}>{previewExpanded ? '추가 성분 접기' : `추가 성분 ${normalized.additional.length}개 보기`}</Text></Pressable>}
+        {entryMode !== 'reference' && <Pressable testID="add-nutrient" accessibilityRole="button" accessibilityLabel="영양성분 추가" onPress={() => setPickerOpen(true)} style={styles.addNutrient}>
           <Text style={styles.editText}>＋ 영양성분 추가</Text>
-        </Pressable>
+        </Pressable>}
+        {entryMode === 'reference' && provenance && <View style={styles.attribution} testID="public-food-attribution">
+          <Text style={styles.hint}>참고 식품: {provenance.name}</Text>
+          <Text style={styles.hint}>출처: {provenance.publisher} · {provenance.title} · {provenance.version}</Text>
+        </View>}
         {unresolved.length > 0 && <Text style={styles.subtitle}>성분명 확인 필요</Text>}
         {unresolved.map((item, i) => <Text key={i} style={styles.body}>{item.printedName ?? item.name} · {item.printedValue ?? '값 확인 필요'}</Text>)}
       </View>
@@ -214,7 +208,7 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food,
           onPress={onCancel} style={({ pressed }) => [styles.cancel, pressed && { opacity: 0.8 }]}>
           <Text style={styles.cancelText}>취소</Text>
         </Pressable>}
-        <Text style={styles.registrationHint}>선택한 물품의 1{food?.unit || '개'} 전체 기준 환산 결과를 확인한 후 등록해 주세요.</Text>
+        <Text style={styles.registrationHint}>{entryMode === 'reference' ? `물품 1${food?.unit || '개'}의 총 내용량에 해당하는 함량으로 등록합니다.` : '영양성분표의 기준과 함량을 확인한 후 등록해 주세요.'}</Text>
       </View>
       {pickerOpen && <NutrientPicker selectedCodes={selectedCodes} onSelect={addNutrient} onClose={() => setPickerOpen(false)} />}
       <Modal visible={editingBasis} transparent animationType="fade" onRequestClose={() => setEditingBasis(false)}>
@@ -226,10 +220,10 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food,
               onChangeText={setDraftQuantity} style={styles.input} />
             <UnitPicker id="nutrition-package-unit" value={draftUnit} onChange={setDraftUnit} />
           </View>
-          <Text style={styles.body}>입력값의 원본 기준</Text>
+          <Text style={styles.body}>영양정보 기준</Text>
           <TextInput testID="nutrition-basis-text" accessibilityLabel="영양정보 기준" value={draftBasis} onChangeText={setDraftBasis}
             placeholder="예: 총 내용량당, 100 g당, 1봉(40 g)당" style={styles.basisInput} />
-          <Text style={styles.hint}>아래 입력값은 원본 기준입니다. 저장할 값은 총 내용량에 맞춰 따로 환산됩니다.</Text>
+          <Text style={styles.hint}>영양성분표에 적힌 기준과 함량을 그대로 등록합니다.</Text>
           <View style={styles.summary}>
             <Pressable accessibilityRole="button" accessibilityLabel="기준 수정 취소" onPress={() => setEditingBasis(false)} style={styles.edit}><Text style={styles.editText}>취소</Text></Pressable>
             <Pressable testID="nutrition-basis-apply" accessibilityRole="button" accessibilityLabel="기준 수정 적용"
@@ -253,6 +247,7 @@ export function NutritionReview({ result, lines = [], entryMode = 'photo', food,
 
 const styles = StyleSheet.create({
   section: { gap: 20 },
+  attribution: { borderTopWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder, paddingTop: 12, gap: 4 },
   manualFields: { gap: 8 },
   basisOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   card: { borderRadius: 16, borderWidth: 1, borderColor: colors.cardBorder, backgroundColor: colors.cardTop, padding: 18, gap: 12 },

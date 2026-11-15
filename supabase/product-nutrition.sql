@@ -2,6 +2,7 @@
 -- 기존 public.fms_states + fms_save_state 설정(supabase/schema.sql)이 필요합니다.
 -- 기존 자료/재고는 유지하며, 로그인 계정의 선택한 물품 영양정보만 변경합니다.
 -- 같은 SQL은 다시 실행해도 안전합니다. 모바일에 비밀 키를 넣지 않습니다.
+-- 촬영/직접 입력은 표에 적힌 기준 그대로(label), 공공 DB 참고값만 FMS 단위 전체 기준(fms_unit)으로 저장합니다.
 begin;
 
 create or replace function public.fms_save_product_nutrition(
@@ -26,6 +27,8 @@ declare
   product_path text[];
   saved_at timestamptz := now();
   amount text;
+  basis_type text;
+  value_basis text;
 begin
   if owner_id is null then
     raise exception 'FMS_AUTH_REQUIRED' using errcode = '28000';
@@ -37,7 +40,7 @@ begin
      or p_nutrition is null or jsonb_typeof(p_nutrition) is distinct from 'object'
      or octet_length(p_nutrition::text) > 1048576
      or p_nutrition -> 'schemaVersion' is distinct from '1'::jsonb
-     or p_nutrition #>> '{basis,type}' is distinct from 'total_package'
+     or jsonb_typeof(p_nutrition -> 'basis') is distinct from 'object'
      or jsonb_typeof(p_nutrition -> 'package') is distinct from 'object'
      or jsonb_typeof(p_nutrition #> '{package,quantity}') is distinct from 'string'
      or jsonb_typeof(p_nutrition #> '{package,unit}') is distinct from 'string'
@@ -54,6 +57,58 @@ begin
      or jsonb_typeof(p_nutrition #> '{source,additional}') is distinct from 'array' then
     raise exception 'FMS_NUTRITION_INVALID' using errcode = '22023';
   end if;
+  basis_type := p_nutrition #>> '{basis,type}';
+  -- Legacy clients only saved total-package values and did not send valueBasis.
+  -- Keep their values explicitly marked as fms_unit; never relabel them as original-label values.
+  value_basis := coalesce(p_nutrition ->> 'valueBasis','fms_unit');
+  if value_basis not in ('label','fms_unit')
+     or (p_nutrition ? 'valueBasis' and jsonb_typeof(p_nutrition -> 'valueBasis') is distinct from 'string')
+     or basis_type is null
+     or basis_type not in ('total_package','per_quantity','per_serving','per_unit','per_daily_intake') then
+    raise exception 'FMS_NUTRITION_INVALID' using errcode = '22023';
+  end if;
+  if p_nutrition ->> 'origin' = 'reference' then
+    if value_basis <> 'fms_unit' or basis_type <> 'total_package' then
+      raise exception 'FMS_NUTRITION_INVALID' using errcode = '22023';
+    end if;
+  elsif value_basis <> 'label' then
+    if p_nutrition ? 'valueBasis' or basis_type <> 'total_package' then
+      raise exception 'FMS_NUTRITION_INVALID' using errcode = '22023';
+    end if;
+  end if;
+  -- A per-quantity label needs its printed positive quantity and unit. Serving/count/day
+  -- labels may retain a printed basis without a weight because these values are not converted.
+  if basis_type = 'per_quantity' or p_nutrition #> '{basis,quantity}' is not null
+       or p_nutrition #> '{basis,unit}' is not null then
+    if jsonb_typeof(p_nutrition #> '{basis,quantity}') is distinct from 'string'
+       or jsonb_typeof(p_nutrition #> '{basis,unit}') is distinct from 'string'
+       or length(btrim(p_nutrition #>> '{basis,unit}')) not between 1 and 20 then
+      raise exception 'FMS_NUTRITION_INVALID' using errcode = '22023';
+    end if;
+    amount := p_nutrition #>> '{basis,quantity}';
+    if amount !~ '^[0-9]{1,24}(\.[0-9]{1,12})?$'
+       or length(replace(amount,'.','')) > 24 then
+      raise exception 'FMS_NUTRITION_INVALID' using errcode = '22023';
+    end if;
+    if amount::numeric <= 0 then
+      raise exception 'FMS_NUTRITION_INVALID' using errcode = '22023';
+    end if;
+  end if;
+  if p_nutrition #> '{basis,count}' is not null then
+    if jsonb_typeof(p_nutrition #> '{basis,count}') is distinct from 'string' then
+      raise exception 'FMS_NUTRITION_INVALID' using errcode = '22023';
+    end if;
+    amount := p_nutrition #>> '{basis,count}';
+    if amount !~ '^[0-9]{1,24}(\.[0-9]{1,12})?$'
+       or length(replace(amount,'.','')) > 24 then
+      raise exception 'FMS_NUTRITION_INVALID' using errcode = '22023';
+    end if;
+    if amount::numeric <= 0 then
+      raise exception 'FMS_NUTRITION_INVALID' using errcode = '22023';
+    end if;
+  end if;
+  p_nutrition := jsonb_set(p_nutrition,'{valueBasis}',to_jsonb(value_basis),true);
+
   -- Separate checks avoid calling array functions on malformed JSON values.
   if jsonb_array_length(p_nutrition -> 'required') > 299
      or jsonb_array_length(p_nutrition -> 'additional') > 299

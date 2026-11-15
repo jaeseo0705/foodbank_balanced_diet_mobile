@@ -214,10 +214,13 @@ test('public search stays in the app, retries failures and prefills reference da
   await act(async () => { byId(`public-food-${publicFoods[0].source_key}:${publicFoods[0].record_key}`).props.onPress(); });
   expect(byId('food-search-detail')).toBeDefined();
   expect(byId('public-food-attribution').findAllByType(Text).map(n => [n.props.children].flat().join('')).join(' ')).toContain(publicFoods[0].publisher);
-  expect(byId('manual-basis-text').props.value).toBe(`${publicFoods[0].basis}당`);
-  expect(byId('nutrition-value-A001').props.value).toBe(publicFoods[0].raw_values.R);
-  await act(async () => { byId('public-food-raw-toggle').props.onPress(); });
-  expect(byId('public-food-raw')).toBeDefined();
+  expect(byId('manual-basis-text')).toBeUndefined();
+  expect(byId('nutrition-value-A001').props.value).toBe('');
+  await act(async () => { byId('manual-package-quantity').props.onChangeText('300'); });
+  expect(byId('nutrition-value-A001').props.value).toBe(String(Number(publicFoods[0].raw_values.R) * 3));
+  expect(byId('public-food-raw')).toBeUndefined();
+  expect(byId('nutrition-normalized-preview')).toBeUndefined();
+  expect(byId('nutrition-info-card')).toBeDefined();
   expect(open).not.toHaveBeenCalled();
   await act(async () => { byId('back-button').props.onPress(); });
   expect(byId('public-food-query').props.value).toBe('김치');
@@ -562,7 +565,7 @@ test('100g public reference is saved as 300g whole-product values, with the sour
   await act(async () => { byId(`public-food-${source.source_key}:${source.record_key}`).props.onPress(); });
   await act(async () => { byId('manual-package-quantity').props.onChangeText('300'); });
   const original = Number(source.raw_values.R);
-  expect(byId('normalized-value-A001').props.children).toContain(String(original * 3));
+  expect(byId('nutrition-value-A001').props.value).toBe(String(original * 3));
   await act(async () => { await byId('register-nutrition').props.onPress(); });
   const [, saved] = client.saveNutrition.mock.calls.at(-1);
   expect(saved.package).toEqual({ quantity: '300', unit: 'g' });
@@ -574,4 +577,24 @@ test('100g public reference is saved as 300g whole-product values, with the sour
   await act(async () => { await byId('register-nutrition').props.onPress(); });
   expect(client.saveNutrition.mock.calls.at(-1)[1].required.find(n => n.code === 'A001').value).toBe(String(original * 6));
   expect(client.saveNutrition.mock.calls.at(-1)[2]).toBe(1);
+});
+
+
+test('photo labels keep their own basis and numbers in a single nutrition card', async () => {
+  recognizeNutritionText.mockResolvedValue({ text: '100g당 200kcal', lines: [], languages: ['ko-KR'], nutrition: {
+    package: { quantity: '300', unit: 'g' }, basis: { type: 'per_quantity', quantity: '100', unit: 'g', needsReview: false, needsUnitWeight: false },
+    required: [{ code: 'A001', name: '열량', value: '200', unit: 'kcal', state: 'exact', needsReview: false, reviewReasons: [], notices: [], alternatives: [] }],
+    additional: [], review: { unmatched: [], ambiguous: [], conflicts: [], leftoverText: [], notes: [] },
+  } });
+  await selectOcrPhoto();
+  await act(async () => { await byId('read-nutrition-text').props.onPress(); });
+  expect(byId('nutrition-normalized-preview')).toBeUndefined();
+  expect(byId('nutrition-info-card')).toBeDefined();
+  expect(byId('nutrition-value-A001').props.value).toBe('200');
+  await act(async () => { await byId('register-nutrition').props.onPress(); });
+  const saved = createFmsClient.mock.results.at(-1).value.saveNutrition.mock.calls.at(-1)[1];
+  expect(saved.valueBasis).toBe('label');
+  expect(saved.basis.type).toBe('per_quantity');
+  expect(saved.basis.quantity).toBe('100');
+  expect(saved.required[0].value).toBe('200');
 });

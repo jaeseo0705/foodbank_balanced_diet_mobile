@@ -7,7 +7,7 @@ export type NormalizedNutrition = {
   source: { basis: NutritionBasis; required: NutritionValue[]; additional: NutritionValue[] };
 };
 export type NutritionRegistration = NormalizedNutrition & {
-  origin: 'photo' | 'manual' | 'reference'; fmsUnit: string;
+  origin: 'photo' | 'manual' | 'reference'; fmsUnit: string; valueBasis?: 'label' | 'fms_unit';
   original?: { basis: NutritionBasis; package?: { quantity: string; unit: string }; required: NutritionValue[]; additional: NutritionValue[] };
   provenance?: { sourceKey: string; recordKey: string; name: string; title: string; publisher: string; version: string;
     basis: string; headers: unknown; rawValues: Record<string, string> };
@@ -96,4 +96,25 @@ export function normalizeNutrition(input: NutritionInput): NormalizedNutrition {
     basis: { type: 'total_package', quantity: input.package.quantity, unit: packageUnit, printedText: '총 내용량당', needsReview: false, needsUnitWeight: false },
     factor: format(fn, fd), required: input.required.map(scale), additional: input.additional.map(scale),
     source: clone({ basis, required: input.required, additional: input.additional }) };
+}
+
+// Labels are registered as printed. Only a public DB reference is converted to an FMS unit.
+export function prepareNutritionRegistration(input: NutritionInput, origin: 'photo' | 'manual' | 'reference'): NormalizedNutrition & { valueBasis: 'label' | 'fms_unit' } {
+  if (origin === 'reference') return { ...normalizeNutrition(input), valueBasis: 'fms_unit' };
+  positive(input.package.quantity);
+  const unit = canonicalQuantityUnit(input.package.unit);
+  if (!unit || unit.length > 20) throw Error('총 내용량의 단위를 확인해 주세요.');
+  if (input.basis.type === 'unknown') throw Error('영양성분표의 함량 기준을 확인해 주세요.');
+  if (input.basis.type === 'per_quantity') {
+    if (!input.basis.quantity || !input.basis.unit) throw Error('영양성분표의 기준량과 단위를 확인해 주세요.');
+    positive(input.basis.quantity);
+  }
+  for (const item of [...input.required, ...input.additional]) if (item.value !== undefined && item.value !== '') {
+    fraction(item.value);
+    if (!['exact', 'explicit_zero', 'bounded'].includes(item.state)) throw Error(`${item.name}의 값을 확인해 주세요.`);
+  }
+  const labelBasis = input.basis.type === 'total_package' ? { ...input.basis, quantity: input.package.quantity, unit } : input.basis;
+  return { schemaVersion: 1, valueBasis: 'label', package: { quantity: input.package.quantity, unit }, basis: clone(labelBasis), factor: '1',
+    required: clone(input.required), additional: clone(input.additional),
+    source: clone({ basis: input.basis, required: input.required, additional: input.additional }) };
 }

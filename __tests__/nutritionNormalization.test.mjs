@@ -254,3 +254,38 @@ test('partly specified total-package source amount cannot silently bypass normal
   assert.throws(() => normalizeNutrition(input({ basis: basis('total_package', '300', undefined) })), koreanError);
   assert.throws(() => normalizeNutrition(input({ basis: basis('total_package', undefined, 'g') })), koreanError);
 });
+
+test('photo label values stay as printed even for a 100g label and 300g package', async () => {
+  const { prepareNutritionRegistration } = await import('../src/lib/nutritionNormalization.ts');
+  const source = input({ package: { quantity: '300', unit: 'g' } });
+  const label = prepareNutritionRegistration(source, 'photo');
+  assert.equal(label.valueBasis, 'label');
+  assert.equal(label.factor, '1');
+  assert.deepEqual(label.required, source.required);
+  assert.deepEqual(label.basis, source.basis);
+  const database = prepareNutritionRegistration(source, 'reference');
+  assert.equal(database.valueBasis, 'fms_unit');
+  assert.equal(database.factor, '3');
+  assert.equal(database.basis.type, 'total_package');
+});
+
+test('manual entry and 1-serving labels do not need an invented serving weight', async () => {
+  const { prepareNutritionRegistration } = await import('../src/lib/nutritionNormalization.ts');
+  const source = input({ basis: { type: 'per_serving', count: '1', countUnit: '회분', needsReview: false, needsUnitWeight: true } });
+  for (const origin of ['manual', 'photo']) {
+    const saved = prepareNutritionRegistration(source, origin);
+    assert.deepEqual(saved.required, source.required);
+    assert.deepEqual(saved.basis, source.basis);
+    assert.equal(saved.valueBasis, 'label');
+  }
+});
+
+test('correcting total content changes the metadata, not the printed whole-package calories', async () => {
+  const { prepareNutritionRegistration } = await import('../src/lib/nutritionNormalization.ts');
+  const source = input({ package: { quantity: '300', unit: 'g' }, basis: { type: 'total_package', quantity: '80', unit: 'g', needsReview: false, needsUnitWeight: false } });
+  const saved = prepareNutritionRegistration(source, 'photo');
+  assert.deepEqual(saved.required, source.required);
+  assert.equal(saved.basis.quantity, '300');
+  assert.equal(saved.package.quantity, '300');
+  assert.equal(saved.source.basis.quantity, '80');
+});
