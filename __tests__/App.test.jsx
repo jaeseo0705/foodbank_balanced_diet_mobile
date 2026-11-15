@@ -73,7 +73,9 @@ test('password visibility toggles without changing the entered password', async 
   expect(byId('password-input').props.secureTextEntry).toBe(true);
 });
 
-test('fresh app instance requires authentication and clears credentials', async () => {
+test.each([true, false])('fresh app requires authentication regardless of checkbox=%s', async (checked) => {
+  if (!checked) await act(async () => { byId('keep-logged-in').props.onPress(); });
+  expect(byId('keep-logged-in').props.accessibilityState.checked).toBe(checked);
   await login();
   expect(byId('task-selection-screen')).toBeDefined();
   await act(async () => { renderer.unmount(); renderer = create(<App />); });
@@ -81,7 +83,7 @@ test('fresh app instance requires authentication and clears credentials', async 
   expect(byId('task-selection-screen')).toBeUndefined();
   expect(byId('username-input').props.value).toBe('');
   expect(byId('password-input').props.value).toBe('');
-  expect(byId('keep-logged-in')).toBeUndefined();
+  expect(byId('keep-logged-in').props.accessibilityState.checked).toBe(true);
 });
 
 test('empty credentials and failed authentication do not open the workspace', async () => {

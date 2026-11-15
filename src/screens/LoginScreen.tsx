@@ -5,13 +5,15 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { EyeIcon } from '../components/Icons';
+import { CheckIcon, EyeIcon } from '../components/Icons';
 import { NutritionIllustration } from '../components/NutritionIllustration';
 
 export function LoginScreen({ onLogin, message = '' }: { onLogin: (email: string, password: string) => Promise<void>; message?: string }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  // Visual selection only; never passed to authentication or persisted.
+  const [keepLoggedIn, setKeepLoggedIn] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const submitting = useRef(false);
@@ -98,6 +100,22 @@ export function LoginScreen({ onLogin, message = '' }: { onLogin: (email: string
                 </Pressable>
               </View>
             </View>
+
+            <Pressable
+              testID="keep-logged-in"
+              accessibilityRole="checkbox"
+              accessibilityLabel="로그인 상태 유지"
+              accessibilityHint="현재는 체크 여부와 관계없이 로그인 정보를 저장하지 않습니다."
+              accessibilityState={{ checked: keepLoggedIn }}
+              aria-checked={keepLoggedIn}
+              onPress={() => setKeepLoggedIn(value => !value)}
+              style={({ pressed }) => [styles.rememberRow, pressed && styles.pressed]}
+            >
+              <View style={[styles.checkbox, keepLoggedIn && styles.checkboxChecked]}>
+                {keepLoggedIn && <CheckIcon />}
+              </View>
+              <Text style={styles.rememberText}>로그인 상태 유지</Text>
+            </Pressable>
 
             {!!(error || message) && <Text testID="login-error" accessibilityRole="alert" style={styles.modalText}>{error || message}</Text>}
 
