@@ -16,6 +16,10 @@ jest.mock('expo-image-picker', () => ({
 
 jest.mock('../src/lib/fmsCloud', () => ({ createFmsClient: jest.fn(() => ({
   signIn: jest.fn().mockResolvedValue(undefined), clear: jest.fn(),
+  loadInventory: jest.fn().mockResolvedValue([
+    { id: 'p1', name: '시험 물품', barcode: '880001', category: '식품', unit: '개', quantity: 7 },
+    { id: 'p2', name: '품절 물품', barcode: '880002', category: '식품', unit: '봉', quantity: 0 },
+  ]),
   loadProducts: jest.fn().mockResolvedValue([
     { id: 'p1', name: '시험 물품', barcode: '880001', workspaceUserId: 'u1' },
     { id: 'p2', name: '다른 물품', barcode: '880002', workspaceUserId: 'u1' },
@@ -482,3 +486,32 @@ test('changing the selected FMS product preserves manual nutrient edits', async 
   expect(byId('nutrition-value-A001').props.value).toBe('375');
   expect(byId('fms-food-summary')).toBeDefined();
 });
+
+test('inventory reads cloud stock, filters zero stock, searches and refreshes', async () => {
+  await login();
+  const client = createFmsClient.mock.results.at(-1).value;
+  await act(async () => { byId('task-inventory').props.onPress(); });
+  expect(client.loadInventory).toHaveBeenCalledTimes(1);
+  expect(byId('inventory-list').props.data.map(item => item.id)).toEqual(['p1']);
+  await act(async () => { byId('inventory-stock-only').props.onValueChange(false); });
+  expect(byId('inventory-list').props.data).toHaveLength(2);
+  await act(async () => { byId('inventory-search').props.onChangeText('880002'); });
+  expect(byId('inventory-list').props.data.map(item => item.id)).toEqual(['p2']);
+  await act(async () => { byId('inventory-search').props.onChangeText(''); });
+  client.loadInventory.mockResolvedValueOnce([{ id: 'p1', name: '시험 물품', barcode: '880001', category: '식품', unit: '개', quantity: 4 }]);
+  await act(async () => { byId('inventory-refresh').props.onPress(); });
+  expect(byId('inventory-list').props.data[0].quantity).toBe(4);
+  await act(async () => { byId('back-button').props.onPress(); });
+  expect(byId('task-selection-screen')).toBeDefined();
+});
+test('inventory reports cloud failures and can retry', async () => {
+  await login();
+  const client = createFmsClient.mock.results.at(-1).value;
+  client.loadInventory.mockRejectedValueOnce(new Error('재고 조회 실패'));
+  await act(async () => { byId('task-inventory').props.onPress(); });
+  expect(byId('inventory-error').props.children).toBe('재고 조회 실패');
+  await act(async () => { byId('inventory-refresh').props.onPress(); });
+  expect(byId('inventory-error')).toBeUndefined();
+  expect(byId('inventory-list')).toBeDefined();
+});
+

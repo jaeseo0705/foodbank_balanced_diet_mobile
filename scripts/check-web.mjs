@@ -25,7 +25,7 @@ try {
     const headers = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'apikey,content-type,authorization', 'access-control-allow-methods': 'GET,POST,OPTIONS' };
     if (route.request().method() === 'OPTIONS') { await route.fulfill({ status: 204, headers, body: '' }); return; }
     const body = url.includes('/auth/v1/token') ? { access_token: 'fixture-access', refresh_token: 'fixture-refresh', expires_in: 3600, user: { id: 'fixture-user' } }
-      : [{ revision: 1, products: [{ id: 'p1', name: '시험 물품', barcode: '880001', category: '식품', unit: '개' }] }];
+      : [{ revision: 1, donations: [{ items: [{ productId: 'p1', quantity: 10 }] }], provisions: [{ items: [{ productId: 'p1', quantity: 3 }] }], disposals: [], transfers: [], adjustments: [], splits: [], sets: [], products: [{ id: 'p1', name: '시험 물품', barcode: '880001', category: '식품', unit: '개' }] }];
     await route.fulfill({ status: 200, headers, contentType: 'application/json', body: JSON.stringify(body) });
   });
   async function login() {
@@ -162,6 +162,17 @@ try {
   await checkTasks();
   const preview = await page.screenshot({ path: 'qa-output/task-selection-phone.png', fullPage: true });
   if (process.env.QA_PREVIEW_LOG === '1') console.log('QA_IMAGE_START' + preview.toString('base64') + 'QA_IMAGE_END');
+  await page.getByTestId('task-inventory').click();
+  await page.getByTestId('inventory-item-p1').waitFor();
+  assert.match(await page.getByTestId('inventory-quantity-p1').innerText(), /7/);
+  await page.getByTestId('inventory-search').fill('존재하지않는물품');
+  await page.getByTestId('inventory-empty').waitFor();
+  await page.getByTestId('inventory-search').fill('880001');
+  await page.getByTestId('inventory-item-p1').waitFor();
+  await page.getByTestId('inventory-refresh').click();
+  await page.getByTestId('inventory-item-p1').waitFor();
+  await page.screenshot({ path: 'qa-output/inventory-phone.png', fullPage: true });
+  await page.getByRole('button', { name: '뒤로', exact: true }).click();
   await checkRegistration('phone', true);
   for (const label of ['영양성분 등록', '재고 현황', '배분 추천', '영양 계산']) {
     await page.getByRole('button', { name: label, exact: true }).click();
@@ -196,4 +207,5 @@ try {
   if (browser) await browser.close();
   server.kill();
 }
+
 

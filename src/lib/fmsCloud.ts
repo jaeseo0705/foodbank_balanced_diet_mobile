@@ -1,3 +1,4 @@
+import { buildInventory, inventoryCollections, type InventoryItem } from './fmsInventory';
 import type { FmsFood } from './nutritionValidation';
 // Same public client configuration as FMS. Never use a service_role/secret key.
 const baseUrl = 'https://aqbmgufdixxhvtmmrwyp.supabase.co';
@@ -22,8 +23,8 @@ export function createFmsClient(onExpired: () => void) {
       if (!response.ok) {
         if (options.token && response.status === 401) { if (generation === requestGeneration) expire(); throw Error('로그인이 만료됐습니다. 다시 로그인해 주세요.'); }
         if (path.startsWith('/auth/')) throw Error('FMS 계정의 이메일과 비밀번호를 확인해 주세요.');
-        if (response.status === 403) throw Error('물품 조회 권한을 확인해 주세요.');
-        throw Error('FMS 물품을 불러오지 못했습니다. 다시 시도해 주세요.');
+        if (response.status === 403) throw Error('자료 조회 권한을 확인해 주세요.');
+        throw Error('FMS 자료를 불러오지 못했습니다. 다시 시도해 주세요.');
       }
       return data;
     } catch (error) {
@@ -70,5 +71,15 @@ export function createFmsClient(onExpired: () => void) {
         barcode: String(p.barcode ?? ''), category: String(p.category ?? ''), unit: String(p.unit ?? ''), brand: String(p.brand ?? '') };
     });
   }
-  return { signIn, loadProducts, clear };
+  async function loadInventory(): Promise<InventoryItem[]> {
+    const jwt = await token(), current = generation, userId = session!.user.id;
+    // Read only product and stock-ledger collections from a single revision.
+    const select = ['revision', ...inventoryCollections.map(key => `${key}:payload->records->collections->${key}`)].join(',');
+    const rows = await request(`/rest/v1/fms_states?select=${encodeURIComponent(select)}&user_id=eq.${encodeURIComponent(userId)}`, { token: jwt });
+    if (generation !== current) throw Error('다시 로그인해 주세요.');
+    if (!Array.isArray(rows) || rows.length > 1) throw Error('FMS 자료 형식을 확인해 주세요.');
+    return rows.length ? buildInventory(rows[0]) : [];
+  }
+  return { signIn, loadProducts, loadInventory, clear };
 }
+

@@ -12,9 +12,10 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "test": "jest --runInBand",
+    "test": "npm run test:inventory && jest --runInBand",
     "export": "expo export --platform all",
-    "test:web": "node scripts/check-web.mjs"
+    "test:web": "node scripts/check-web.mjs",
+    "test:inventory": "node --experimental-strip-types --test __tests__/inventory.test.mjs"
   },
   "dependencies": {
     "expo": "57.0.32",
@@ -53,3 +54,4 @@
     }
   }
 }
+

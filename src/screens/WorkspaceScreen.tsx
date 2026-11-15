@@ -5,6 +5,7 @@ import { BackIcon, ProfileAvatar, type TaskId } from '../components/TaskIcons';
 import { colors } from '../theme';
 import { TaskSelectionScreen, tasks } from './TaskSelectionScreen';
 import { FmsNutritionScreen } from './FmsNutritionScreen';
+import { InventoryScreen } from './InventoryScreen';
 
 type Screen = 'home' | TaskId | 'profile' | 'settings' | 'about';
 
@@ -28,6 +29,8 @@ export function WorkspaceScreen({ onLogout }: { onLogout: () => void }) {
   if (screen === 'nutrition-registration') {
     return <FmsNutritionScreen onBack={() => setScreen('home')} />;
   }
+
+  if (screen === 'inventory') return <InventoryScreen onBack={() => setScreen('home')} />;
 
   const title = screen === 'profile' ? '프로필'
     : screen === 'settings' ? '설정'
@@ -105,4 +108,5 @@ const styles = StyleSheet.create({
   aboutText: { fontSize: 16, lineHeight: 25, color: colors.body },
   pressed: { opacity: 0.65 },
 });
+
 
