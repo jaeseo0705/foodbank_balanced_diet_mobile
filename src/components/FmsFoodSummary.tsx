@@ -4,7 +4,7 @@ import { colors } from '../theme';
 export function FmsFoodSummary({ food, onChange }: { food: FmsFood; onChange?: () => void }) {
   return <View testID="fms-food-summary" style={styles.card}>
     <Text style={styles.name}>{food.name}</Text>
-    <Text style={styles.body}>바코드 {food.barcode || '없음'} · 물품코드 {food.id}</Text>
+    <Text style={styles.body}>바코드 {food.barcode || '없음'}</Text>
     {onChange && <Pressable testID="change-fms-food" accessibilityRole="button" accessibilityLabel="물품 변경" onPress={onChange} style={styles.button}><Text style={styles.link}>물품 변경</Text></Pressable>}
   </View>;
 }
