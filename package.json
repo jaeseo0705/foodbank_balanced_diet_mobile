@@ -18,7 +18,7 @@
     "test:inventory": "node --experimental-strip-types --test __tests__/inventory.test.mjs"
   },
   "dependencies": {
-    "expo": "57.0.32",
+    "expo": "57.0.33",
     "expo-linear-gradient": "57.0.2",
     "expo-status-bar": "57.0.1",
     "react": "19.2.3",
@@ -54,4 +54,3 @@
     }
   }
 }
-
